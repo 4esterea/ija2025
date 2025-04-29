@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane fx:id="gameWindow" prefHeight="650.0" prefWidth="550.0" styleClass="mainWindow" stylesheets="@styles/styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ija2025.GameController">
+   <top>
+      <HBox alignment="CENTER" prefHeight="50.0">
+         <Button fx:id="stepBackButton" mnemonicParsing="false" text="&lt;">
+            <font>
+               <Font name="Papyrus" size="16.0" />
+            </font>
+            <HBox.margin>
+               <Insets left="10.0" right="5.0" top="5.0" />
+            </HBox.margin>
+         </Button>
+         <Button fx:id="stepForwardButton" mnemonicParsing="false" text="&gt;">
+            <font>
+               <Font name="Papyrus" size="16.0" />
+            </font>
+            <HBox.margin>
+               <Insets top="5.0" />
+            </HBox.margin>
+         </Button>
+         <Region prefHeight="50.0" prefWidth="180.0" />
+         <Text fx:id="timerText" stroke="BLACK" strokeType="OUTSIDE" strokeWidth="0.0" styleClass="timerText" text="00:00" textAlignment="CENTER">
+            <font>
+               <Font name="Papyrus" size="31.0" />
+            </font>
+            <HBox.margin>
+               <Insets top="20.0" />
+            </HBox.margin>
+         </Text>
+         <Region prefHeight="50.0" prefWidth="173.0" />
+         <Button fx:id="pauseButton" mnemonicParsing="false" prefHeight="46.0" prefWidth="88.0" text="Pause">
+            <font>
+               <Font name="Papyrus" size="16.0" />
+            </font>
+            <HBox.margin>
+               <Insets right="10.0" top="5.0" />
+            </HBox.margin>
+         </Button>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+      </HBox>
+   </top>
+   <center>
+      <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+         <Pane fx:id="gameField" prefHeight="500.0" prefWidth="500.0" styleClass="innerContainer">
+            <VBox.margin>
+               <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+            </VBox.margin>
+         </Pane>
+      </VBox>
+   </center>
+</BorderPane>

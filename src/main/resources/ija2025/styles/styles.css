@@ -1,0 +1,70 @@
+﻿.root {
+    -fx-main-background-color: rgb(38, 38, 38);
+    -fx-dark-background-color: rgb(30, 31, 34);
+    -fx-light-background-color: rgb(43, 45, 48);
+    -fx-main-border-color: rgb(30, 31, 34);
+    -fx-main-text-color: rgb(205, 205, 205);
+
+    -fx-fill: rgb(205, 205, 205);
+
+}
+
+.mainWindow{
+    -fx-background-color: rgb(38, 38, 38);
+    -fx-fill: rgb(205, 205, 205);
+}
+
+#labelMainMenu{
+    -fx-fill: rgb(205, 205, 205);
+}
+
+#labelDifficultyMenu{
+    -fx-fill: rgb(205, 205, 205);
+}
+
+
+.button{
+    -fx-background-color: rgb(43, 45, 48);
+    -fx-text-fill: rgb(205, 205, 205);
+    -fx-border-color: rgb(30, 31, 34);
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
+    -fx-alignment: CENTER;
+    -fx-content-display: CENTER;
+    -fx-text-alignment: CENTER;
+}
+
+.button:hover{
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+    -fx-background-color: rgb(30, 31, 34);
+    -fx-text-fill: rgb(255, 255, 255);
+    -fx-border-color: rgb(60, 63, 65);
+}
+
+.button:pressed{
+    -fx-scale-x: 0.95;
+    -fx-scale-y: 0.95;
+    -fx-background-color: rgb(30, 31, 34);
+    -fx-text-fill: rgb(255, 255, 255);
+    -fx-border-color: rgb(60, 63, 65);
+}
+
+.innerContainer{
+    -fx-background-color: rgb(43, 45, 48);
+}
+
+#timerText{
+    -fx-fill: rgb(205, 205, 205);
+    -fx-font-size: 32px;
+}
+
+.pauseModal{
+    -fx-background-color: rgb(38, 38, 38);
+    -fx-padding: 40px;
+    -fx-border-color: rgb(60, 63, 65);
+    -fx-border-width: 2px;
+}
