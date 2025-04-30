@@ -94,6 +94,26 @@ public class GameManager {
         }
         checkAllLightBulbsConnected();
         finalizePowerNodeConnections();
+        shuffleAllNodes();
+        updatePowerFlow();
+    }
+
+    private void shuffleAllNodes(){
+
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                if (grid[row][col] != null) {
+                    GameNode node = grid[row][col];
+                    if (node instanceof PowerNode) {
+                        continue;
+                    }
+                    int rotations = random.nextInt(4);
+                    for (int i = 0; i < rotations; i++) {
+                        node.rotate();
+                    }
+                }
+            }
+        }
     }
 
     public void finalizePowerNodeConnections() {
@@ -386,81 +406,6 @@ public class GameManager {
         System.out.println("===== ЗАВЕРШЕНО ПОДКЛЮЧЕНИЕ ЛАМПОЧКИ К ИСТОЧНИКУ =====\n");
     }
 
-    // Метод для замены лампочки на провод
-    private void replaceLightBulbWithWire(LightBulbNode lightBulb) {
-        int row = lightBulb.getRow();
-        int col = lightBulb.getCol();
-
-        // Удаляем лампочку из списка
-        lightBulbNodes.remove(lightBulb);
-
-        // Создаем новый провод на месте лампочки
-        WireNode wireNode = new WireNode(row, col);
-        wireNode.setGameManager(this);
-
-        // Добавляем соединения в направлениях, которые помогут соединить с источником
-        // Расчет направления к источнику
-        int rowDelta = _powerNode.getRow() - row;
-        int colDelta = _powerNode.getCol() - col;
-
-        // Выбираем первое направление по наибольшей дельте
-        if (Math.abs(rowDelta) > Math.abs(colDelta)) {
-            if (rowDelta < 0) {
-                wireNode.addConnection(WireNode.Direction.UP);
-                wireNode.addConnection(WireNode.Direction.DOWN);
-            } else {
-                wireNode.addConnection(WireNode.Direction.DOWN);
-                wireNode.addConnection(WireNode.Direction.UP);
-            }
-        } else {
-            if (colDelta < 0) {
-                wireNode.addConnection(WireNode.Direction.LEFT);
-                wireNode.addConnection(WireNode.Direction.RIGHT);
-            } else {
-                wireNode.addConnection(WireNode.Direction.RIGHT);
-                wireNode.addConnection(WireNode.Direction.LEFT);
-            }
-        }
-
-        // Обновляем сетку
-        grid[row][col] = wireNode;
-
-        // Пытаемся построить путь к источнику снова, но уже от провода
-        buildPathToSource(wireNode);
-
-        // Обновляем поток энергии
-        updatePowerFlow();
-    }
-
-    // Вспомогательный метод для построения пути от провода к источнику
-    private void buildPathToSource(WireNode wireNode) {
-        int row = wireNode.getRow();
-        int col = wireNode.getCol();
-
-        // Для каждого направления провода пытаемся построить путь
-        for (WireNode.Direction dir : wireNode.getConnectedDirections()) {
-            int nextRow = row;
-            int nextCol = col;
-
-            switch (dir) {
-                case UP: nextRow--; break;
-                case RIGHT: nextCol++; break;
-                case DOWN: nextRow++; break;
-                case LEFT: nextCol--; break;
-            }
-
-            // Проверяем границы
-            if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) {
-                continue;
-            }
-
-            // Пытаемся построить путь от этой клетки
-            if (buildPath(nextRow, nextCol, dir.getOpposite(), _powerNode.getRow(), _powerNode.getCol(), new boolean[gridSize][gridSize])) {
-                return; // Путь построен, выходим
-            }
-        }
-    }
-
     // Рекурсивное построение пути от текущей клетки к цели
     private boolean buildPath(int row, int col, WireNode.Direction fromDirection,
                             int targetRow, int targetCol, boolean[][] visited) {
@@ -588,7 +533,7 @@ public class GameManager {
         _powerNode = powerNode;
     }
 
-private LightBulbNode placeLightBulbNode() {
+    private LightBulbNode placeLightBulbNode() {
     int row = random.nextInt(gridSize);
     int col = random.nextInt(gridSize);
 
@@ -614,8 +559,8 @@ private LightBulbNode placeLightBulbNode() {
     return lightBulbNode;
 }
 
-// Проверяет, смотрит ли лампочка за пределы игрового поля
-private boolean isFacingBounds(LightBulbNode node) {
+    // Проверяет, смотрит ли лампочка за пределы игрового поля
+    private boolean isFacingBounds(LightBulbNode node) {
     int rotation = node.getRotation();
     int row = node.getRow();
     int col = node.getCol();
@@ -657,8 +602,6 @@ private boolean isFacingBounds(LightBulbNode node) {
         // Настраиваем обработчики кликов
         setupClickHandlers(gamePane);
     }
-
-
 
     private void drawGrid() {
         // Clear the canvas
@@ -862,23 +805,28 @@ private boolean isFacingBounds(LightBulbNode node) {
             }
         }
 
-        // Распространяем энергию от источника только в активных направлениях
+        // Получаем координаты источника питания
         int powerRow = _powerNode.getRow();
         int powerCol = _powerNode.getCol();
+
+        // Получаем активные направления источника питания
         Set<WireNode.Direction> activeDirections = _powerNode.getActiveDirections();
 
-        // Распространение энергии только в активных направлениях
+        // Распространяем энергию только в активных направлениях
         if (activeDirections.contains(WireNode.Direction.UP)) {
             propagatePower(powerRow - 1, powerCol, 180); // вверх
         }
+
         if (activeDirections.contains(WireNode.Direction.RIGHT)) {
             propagatePower(powerRow, powerCol + 1, 270); // вправо
         }
+
         if (activeDirections.contains(WireNode.Direction.DOWN)) {
-            propagatePower(powerRow + 1, powerCol, 0);   // вниз
+            propagatePower(powerRow + 1, powerCol, 0); // вниз
         }
+
         if (activeDirections.contains(WireNode.Direction.LEFT)) {
-            propagatePower(powerRow, powerCol - 1, 90);  // влево
+            propagatePower(powerRow, powerCol - 1, 90); // влево
         }
 
         // Считаем количество подключенных проводов

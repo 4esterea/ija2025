@@ -26,10 +26,7 @@ public abstract class GameNode extends StackPane {
     public abstract void draw(GraphicsContext gc);
 
     public void rotate() {
-        // Rotate 90 degrees clockwise
         rotation = (rotation + 90) % 360;
-        // Redraw after rotation
-        //this.getParent().requestLayout();
     }
 
     public int getRow() {

@@ -1,16 +1,18 @@
 package ija2025;
 
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class PowerNode extends GameNode {
 
     private Set<WireNode.Direction> activeDirections;
-
+    private static Image lightningImage = null;
     public PowerNode(int row, int col) {
         super(row, col);
         // По умолчанию активны все направления
@@ -20,6 +22,7 @@ public class PowerNode extends GameNode {
                 WireNode.Direction.DOWN,
                 WireNode.Direction.LEFT
         ));
+        loadLightningImage();
     }
 
     public void setActiveDirections(Set<WireNode.Direction> directions) {
@@ -30,54 +33,158 @@ public class PowerNode extends GameNode {
         return activeDirections;
     }
 
+    private void loadLightningImage() {
+        if (lightningImage == null) {
+            try {
+                lightningImage = new Image(Objects.requireNonNull(getClass().getResourceAsStream("media/lightning.png")));
+            } catch (Exception e) {
+                System.err.println("Не удалось загрузить изображение молнии: " + e.getMessage());
+            }
+        }
+    }
+
     @Override
     public void draw(GraphicsContext gc) {
         double cellSize = gameManager.getCellSize();
         double x = col * cellSize;
         double y = row * cellSize;
 
-        // Draw background
-        gc.setFill(Color.YELLOW);
-        gc.fillRect(x, y, cellSize, cellSize);
+        // Толщина проводов (одинаковая в обоих классах)
+        double connectionWidth = cellSize * 0.1;
+        // Толщина соединительного элемента (чуть толще чем провод)
+        double connectionJointWidth = connectionWidth * 1.5;
+        // Длина соединительного элемента
+        double connectionJointLength = cellSize * 0.07;
 
-        // Draw border
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(2);
-        gc.strokeRect(x, y, cellSize, cellSize);
+        double overlap = 1.0; // 1 пиксель перекрытия
 
-        // Draw power symbol
-        gc.setFill(Color.BLACK);
-        // Draw a lightning bolt or power symbol based on rotation
+        // Центр ячейки
         double centerX = x + cellSize / 2;
         double centerY = y + cellSize / 2;
 
-        // Save the current state
-        gc.save();
+        // Размер квадрата
+        double squareSize = cellSize * 0.5;
 
-        // Translate to the center of the cell
-        gc.translate(centerX, centerY);
+        // Рисуем прозрачный фон
+        gc.clearRect(x, y, cellSize, cellSize);
 
-        // Rotate according to the rotation value
-        gc.rotate(rotation);
+        // Рисуем серый квадрат в центре
+        gc.setFill(Color.DARKGRAY);
+        gc.fillRect(centerX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
 
-        // Draw the power symbol (a simple lightning bolt)
-        gc.beginPath();
-        gc.moveTo(0, -15);
-        gc.lineTo(-5, 0);
-        gc.lineTo(0, 0);
-        gc.lineTo(0, 15);
-        gc.lineTo(5, 0);
-        gc.lineTo(0, 0);
-        gc.closePath();
-        gc.fill();
+        // Рамка квадрата
+        gc.setStroke(Color.BLACK);
+        gc.setLineWidth(0.5);
+        gc.strokeRect(centerX - squareSize/2, centerY - squareSize/2, squareSize, squareSize);
 
-        // Restore the graphics context
-        gc.restore();
+        // UP
+        if (activeDirections.contains(WireNode.Direction.UP)) {
+            // Темно-серый переход
+            gc.setFill(Color.rgb(30, 30, 30));
+            gc.fillRect(centerX - connectionJointWidth / 2, centerY - squareSize/2 - connectionJointLength,
+                    connectionJointWidth, connectionJointLength);
+
+            // Провод (с перекрытием)
+            gc.setFill(Color.rgb(255, 185, 1));
+            gc.fillRect(centerX - connectionWidth / 2, y - overlap,
+                    connectionWidth,
+                    centerY - squareSize/2 - connectionJointLength - y + overlap);
+        }
+
+        // RIGHT
+        if (activeDirections.contains(WireNode.Direction.RIGHT)) {
+            // Темно-серый переход
+            gc.setFill(Color.rgb(30, 30, 30));
+            gc.fillRect(centerX + squareSize/2, centerY - connectionJointWidth / 2,
+                    connectionJointLength, connectionJointWidth);
+
+            // Провод (с перекрытием)
+            gc.setFill(Color.rgb(255, 185, 1));
+            gc.fillRect(centerX + squareSize/2 + connectionJointLength,
+                    centerY - connectionWidth / 2,
+                    x + cellSize - (centerX + squareSize/2 + connectionJointLength) + overlap,
+                    connectionWidth);
+        }
+
+        // DOWN
+        if (activeDirections.contains(WireNode.Direction.DOWN)) {
+            // Темно-серый переход
+            gc.setFill(Color.rgb(30, 30, 30));
+            gc.fillRect(centerX - connectionJointWidth / 2, centerY + squareSize/2,
+                    connectionJointWidth, connectionJointLength);
+
+            // Провод (с перекрытием)
+            gc.setFill(Color.rgb(255, 185, 1));
+            gc.fillRect(centerX - connectionWidth / 2,
+                    centerY + squareSize/2 + connectionJointLength,
+                    connectionWidth,
+                    y + cellSize - (centerY + squareSize/2 + connectionJointLength) + overlap);
+        }
+
+        // LEFT
+        if (activeDirections.contains(WireNode.Direction.LEFT)) {
+            // Темно-серый переход
+            gc.setFill(Color.rgb(30, 30, 30));
+            gc.fillRect(centerX - squareSize/2 - connectionJointLength, centerY - connectionJointWidth / 2,
+                    connectionJointLength, connectionJointWidth);
+
+            // Провод (с перекрытием)
+            gc.setFill(Color.rgb(255, 185, 1));
+            gc.fillRect(x - overlap, centerY - connectionWidth / 2,
+                    centerX - squareSize/2 - connectionJointLength - x + overlap,
+                    connectionWidth);
+        }
+
+        // Рисуем молнию внутри квадрата
+        if (lightningImage != null) {
+            double imgSize = squareSize * 0.8;
+            gc.drawImage(lightningImage,
+                    centerX - imgSize/2,
+                    centerY - imgSize/2,
+                    imgSize, imgSize);
+        }
+
+        // Подсветка при наличии питания
+        if (isPowered()) {
+            gc.setGlobalAlpha(0.15);
+            gc.setFill(Color.YELLOW);
+            gc.fillOval(centerX - cellSize * 0.4, centerY - cellSize * 0.4,
+                    cellSize * 0.8, cellSize * 0.8);
+            gc.setGlobalAlpha(1.0);
+        }
     }
+
 
     @Override
     public void rotate() {
         super.rotate();
-        // Additional logic specific to PowerNode rotation if needed
+        // Создаем новый набор активных направлений после поворота
+        Set<WireNode.Direction> newDirections = new HashSet<>();
+
+        // Поворачиваем каждое активное направление на 90 градусов
+        for (WireNode.Direction dir : activeDirections) {
+            switch (dir) {
+                case UP:
+                    newDirections.add(WireNode.Direction.RIGHT);
+                    break;
+                case RIGHT:
+                    newDirections.add(WireNode.Direction.DOWN);
+                    break;
+                case DOWN:
+                    newDirections.add(WireNode.Direction.LEFT);
+                    break;
+                case LEFT:
+                    newDirections.add(WireNode.Direction.UP);
+                    break;
+            }
+        }
+
+        // Обновляем активные направления
+        activeDirections = newDirections;
+
+        // Обновляем поток энергии для переподключения элементов
+        if (gameManager != null) {
+            gameManager.updatePowerFlow();
+        }
     }
 }

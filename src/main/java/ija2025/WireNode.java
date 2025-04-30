@@ -73,41 +73,80 @@ public class WireNode extends GameNode {
         double y = row * cellSize;
         double centerX = x + cellSize / 2;
         double centerY = y + cellSize / 2;
-        double wireWidth = 10; // Ширина провода
-        double lineLength = cellSize / 2; // Длина линии от центра до края
 
-        // Рисуем фон
-        gc.setFill(Color.LIGHTGRAY);
-        gc.fillRect(x, y, cellSize, cellSize);
+        // Толщина проводов
+        double connectionWidth = cellSize * 0.1;
+        // Небольшой отступ для перекрытия между элементами
+        double overlap = 1.0; // 1 пиксель перекрытия
 
-        // Рисуем границу
-        gc.setStroke(Color.BLACK);
-        gc.setLineWidth(1);
-        gc.strokeRect(x, y, cellSize, cellSize);
+        // Рисуем прозрачный фон
+        gc.clearRect(x, y, cellSize, cellSize);
 
-        // Устанавливаем цвет провода в зависимости от статуса
-        if (hasDisconnectedEnd) {
-            gc.setFill(Color.RED); // Красный для проводов с отключенными концами
-        } else {
-            gc.setFill(isPowered ? Color.GREEN : Color.DARKGRAY);
+        // Рисуем провода в подключенных направлениях
+        for (Direction dir : connections) {
+            double wireX = 0;
+            double wireY = 0;
+            double wireWidth = 0;
+            double wireHeight = 0;
+
+            switch (dir) {
+                case UP:
+                    wireX = centerX - connectionWidth / 2;
+                    wireY = y - overlap; // Выходим за пределы текущей ячейки
+                    wireWidth = connectionWidth;
+                    wireHeight = cellSize / 2 + overlap;
+                    break;
+                case RIGHT:
+                    wireX = centerX;
+                    wireY = centerY - connectionWidth / 2;
+                    wireWidth = cellSize / 2 + overlap;
+                    wireHeight = connectionWidth;
+                    break;
+                case DOWN:
+                    wireX = centerX - connectionWidth / 2;
+                    wireY = centerY;
+                    wireWidth = connectionWidth;
+                    wireHeight = cellSize / 2 + overlap;
+                    break;
+                case LEFT:
+                    wireX = x - overlap; // Выходим за пределы текущей ячейки
+                    wireY = centerY - connectionWidth / 2;
+                    wireWidth = cellSize / 2 + overlap;
+                    wireHeight = connectionWidth;
+                    break;
+            }
+
+            // Определяем цвет провода
+            Color innerWireColor;
+            if (hasDisconnectedEnd) {
+                innerWireColor = Color.RED;
+            } else {
+                innerWireColor = isPowered ? Color.rgb(255, 185, 1) : Color.rgb(150, 150, 150);
+            }
+
+            gc.setFill(innerWireColor);
+            gc.fillRect(wireX, wireY, wireWidth, wireHeight);
         }
 
-        // Рисуем соединения из центра в каждое подключенное направление
-        for (Direction dir : connections) {
-            // Сохраняем состояние графического контекста
-            gc.save();
+        // Отрисовка соединительного узла в центре, если есть больше одного соединения
+        if (connections.size() > 1) {
+            // Определяем цвет узла, такой же как у проводов
+            Color nodeColor;
+            if (hasDisconnectedEnd) {
+                nodeColor = Color.RED;
+            } else {
+                nodeColor = isPowered ? Color.rgb(255, 185, 1) : Color.rgb(150, 150, 150);
+            }
 
-            // Перемещаемся в центр ячейки
-            gc.translate(centerX, centerY);
+            // Размер узла соединения такой же, как толщина проводов
+            double jointSize = connectionWidth;
 
-            // Вращаем в соответствии с направлением
-            gc.rotate(dir.getDegrees());
+            // Радиус скругления углов (равный размеру узла для круглой формы)
+            double cornerRadius = jointSize;
 
-            // Рисуем линию от центра до края в нужном направлении
-            gc.fillRect(-wireWidth/2, -lineLength, wireWidth, lineLength);
-
-            // Восстанавливаем графический контекст
-            gc.restore();
+            gc.setFill(nodeColor);
+            gc.fillRoundRect(centerX - jointSize/2, centerY - jointSize/2,
+                    jointSize, jointSize, cornerRadius, cornerRadius);
         }
     }
 
