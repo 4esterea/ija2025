@@ -1,5 +1,6 @@
 package ija2025;
 
+import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.ParallelTransition;
@@ -45,17 +46,10 @@ public class MainController implements Initializable {
 
     private void setupButtonActions() {
         playButton.setOnAction(event -> {
-            try {
-                Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("difficulty-view.fxml")));
-                Scene scene = playButton.getScene();
-
-                scene.setRoot(root);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            // Используем SceneTransitionManager для смены сцены
+            SceneTransitionManager.switchScene(playButton, "difficulty-view.fxml");
         });
     }
-
     private void setupButtonTransitions() {
         if (playButton != null) {
             Color defaultBgColor = Color.rgb(43, 45, 48);

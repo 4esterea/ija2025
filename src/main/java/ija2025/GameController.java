@@ -1,6 +1,7 @@
 package ija2025;
 
 import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -328,10 +329,12 @@ public class GameController implements Initializable {
 
 
     private void stepBack(){
+        System.out.println("Step Back");
         // TODO: Implement step back logic
     }
 
     private void stepForward(){
+        System.out.println("Step Forward");
         // TODO: Implement step forward logic
     }
 
@@ -375,7 +378,7 @@ public class GameController implements Initializable {
         pausePopup = new Stage();
         pausePopup.initModality(Modality.APPLICATION_MODAL);
         pausePopup.initStyle(StageStyle.UNDECORATED);
-
+        pausePopup.initOwner(pauseButton.getScene().getWindow());
         VBox pauseLayout = new VBox(20);
         pauseLayout.setAlignment(Pos.CENTER);
 
@@ -391,16 +394,11 @@ public class GameController implements Initializable {
         continueButton.setOnAction(e -> resumeGame());
 
         mainMenuButton.setOnAction(e -> {
-            try {
-                Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("main-view.fxml")));
-                Scene scene = pauseButton.getScene();
-
-                scene.setRoot(root);
-
-                pausePopup.close();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
+            // Получаем основное окно через владельца модального окна
+            Stage primaryStage = (Stage) pausePopup.getOwner();
+            // Используем корневой элемент основной сцены для переключения сцены
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
+            pausePopup.close();
         });
 
         pauseLayout.getChildren().addAll(pauseTitle, continueButton, mainMenuButton);
