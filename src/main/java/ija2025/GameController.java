@@ -394,9 +394,7 @@ public class GameController implements Initializable {
         continueButton.setOnAction(e -> resumeGame());
 
         mainMenuButton.setOnAction(e -> {
-            // Получаем основное окно через владельца модального окна
             Stage primaryStage = (Stage) pausePopup.getOwner();
-            // Используем корневой элемент основной сцены для переключения сцены
             SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
             pausePopup.close();
         });

@@ -78,31 +78,6 @@ public class DifficultyController implements Initializable {
         setupTextTransition(labelDifficultyMenu);
     }
 
-//    private void loadGameView(String difficulty) {
-//        try {
-//            // Load the game view FXML
-//            Parent nextRoot = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("game-view.fxml")));
-//            Scene scene = easyButton.getScene();
-//
-//            // Add the new root to the scene but make it invisible
-//            nextRoot.setOpacity(0);
-//            scene.setRoot(nextRoot);
-//
-//            // Create and configure fade transition
-//            FadeTransition fadeIn = new FadeTransition(Duration.millis(300), nextRoot);
-//            fadeIn.setFromValue(0);
-//            fadeIn.setToValue(1);
-//            fadeIn.setInterpolator(Interpolator.EASE_BOTH);
-//
-//            // Play the transition
-//            fadeIn.play();
-//
-//            System.out.println("Starting game with " + difficulty + " difficulty");
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     private void setupButtonTransition(Button button) {
         if (button != null) {
             Color defaultBgColor = Color.rgb(43, 45, 48);

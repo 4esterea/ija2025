@@ -46,7 +46,6 @@ public class MainController implements Initializable {
 
     private void setupButtonActions() {
         playButton.setOnAction(event -> {
-            // Используем SceneTransitionManager для смены сцены
             SceneTransitionManager.switchScene(playButton, "difficulty-view.fxml");
         });
     }

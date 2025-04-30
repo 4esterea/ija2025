@@ -46,7 +46,6 @@ public class SceneTransitionManager {
 
             ParallelTransition transition = new ParallelTransition(fadeOut, fadeIn);
             transition.setOnFinished(e -> {
-                // Очищаем все дочерние элементы StackPane, чтобы удалить старые ссылки
                 ((StackPane) scene.getRoot()).getChildren().clear();
                 scene.setRoot(newRoot);
             });
