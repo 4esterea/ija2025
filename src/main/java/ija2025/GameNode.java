@@ -9,6 +9,7 @@ public abstract class GameNode extends StackPane {
     protected int col;
     protected int rotation = 0; // 0, 90, 180, 270 degrees
     protected boolean isPowered = false;
+    protected GameManager gameManager;
 
     public GameNode(int row, int col) {
         this.row = row;
@@ -16,6 +17,10 @@ public abstract class GameNode extends StackPane {
 
         // Set up click handler for rotation
         this.setOnMouseClicked(event -> rotate());
+    }
+
+    public void setGameManager(GameManager gameManager) {
+        this.gameManager = gameManager;
     }
 
     public abstract void draw(GraphicsContext gc);
@@ -37,6 +42,10 @@ public abstract class GameNode extends StackPane {
 
     public int getRotation() {
         return rotation;
+    }
+
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
     }
 
     public boolean isPowered() {

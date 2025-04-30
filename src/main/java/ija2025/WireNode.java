@@ -2,90 +2,148 @@ package ija2025;
 
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+import java.util.HashSet;
+import java.util.Set;
 
 public class WireNode extends GameNode {
+    // Множество направлений, в которых провод имеет соединения
+    private Set<Direction> connections = new HashSet<>();
 
-    public enum WireType {
-        L_SHAPE,    // Connects adjacent sides (L)
-        I_SHAPE,    // Connects opposite sides (I)
-        T_SHAPE,    // Connects opposite sides and one side (T)
-        X_SHAPE     // Connects all sides (X)
+    public enum Direction {
+        UP(0),
+        RIGHT(90),
+        DOWN(180),
+        LEFT(270);
+
+        private final int degrees;
+
+        Direction(int degrees) {
+            this.degrees = degrees;
+        }
+
+        public int getDegrees() {
+            return degrees;
+        }
+
+        public Direction getOpposite() {
+            switch (this) {
+                case UP: return DOWN;
+                case RIGHT: return LEFT;
+                case DOWN: return UP;
+                case LEFT: return RIGHT;
+                default: return UP;
+            }
+        }
+
+        public static Direction fromDegrees(int degrees) {
+            degrees = (degrees % 360 + 360) % 360; // Нормализация угла
+            switch (degrees) {
+                case 0: return UP;
+                case 90: return RIGHT;
+                case 180: return DOWN;
+                case 270: return LEFT;
+                default: return UP;
+            }
+        }
     }
 
-    private WireType wireType;
-
-    public WireNode(int row, int col, WireType wireType) {
+    public WireNode(int row, int col) {
         super(row, col);
-        this.wireType = wireType;
+    }
+
+    // Добавление соединения в определённом направлении
+    public void addConnection(Direction direction) {
+        connections.add(direction);
+    }
+
+    // Получение всех соединений
+    public Set<Direction> getConnectedDirections() {
+        return new HashSet<>(connections);
+    }
+
+    // Проверка наличия соединения
+    public boolean isDirectionConnected(Direction direction) {
+        return connections.contains(direction);
     }
 
     @Override
     public void draw(GraphicsContext gc) {
-        double cellSize = 50; // Default cell size
+        double cellSize = gameManager.getCellSize();
         double x = col * cellSize;
         double y = row * cellSize;
         double centerX = x + cellSize / 2;
         double centerY = y + cellSize / 2;
-        double wireWidth = 10;
+        double wireWidth = 10; // Ширина провода
+        double lineLength = cellSize / 2; // Длина линии от центра до края
 
-        // Draw background
-        gc.setFill(isPowered ? Color.LIGHTGREEN : Color.LIGHTGRAY);
+        // Рисуем фон
+        gc.setFill(Color.LIGHTGRAY);
         gc.fillRect(x, y, cellSize, cellSize);
 
-        // Draw border
+        // Рисуем границу
         gc.setStroke(Color.BLACK);
         gc.setLineWidth(1);
         gc.strokeRect(x, y, cellSize, cellSize);
 
-        // Save the current state
-        gc.save();
-
-        // Translate to the center of the cell
-        gc.translate(centerX, centerY);
-
-        // Rotate according to the rotation value
-        gc.rotate(rotation);
-
-        // Set wire color
-        gc.setFill(isPowered ? Color.GREEN : Color.GRAY);
-
-        // Draw the wire based on its type
-        switch (wireType) {
-            case L_SHAPE:
-                // L-shape wire (connects adjacent sides)
-                gc.fillRect(-wireWidth/2, -wireWidth/2, cellSize/2, wireWidth);
-                gc.fillRect(-wireWidth/2, -wireWidth/2, wireWidth, cellSize/2);
-                break;
-
-            case I_SHAPE:
-                // I-shape wire (connects opposite sides)
-                gc.fillRect(-cellSize/2, -wireWidth/2, cellSize, wireWidth);
-                break;
-
-            case T_SHAPE:
-                // T-shape wire (connects opposite sides and one side)
-                gc.fillRect(-cellSize/2, -wireWidth/2, cellSize, wireWidth);
-                gc.fillRect(-wireWidth/2, -wireWidth/2, wireWidth, cellSize/2);
-                break;
-
-            case X_SHAPE:
-                // X-shape wire (connects all sides)
-                gc.fillRect(-cellSize/2, -wireWidth/2, cellSize, wireWidth);
-                gc.fillRect(-wireWidth/2, -cellSize/2, wireWidth, cellSize);
-                break;
+        // Устанавливаем цвет провода в зависимости от статуса
+        if (hasDisconnectedEnd) {
+            gc.setFill(Color.RED); // Красный для проводов с отключенными концами
+        } else {
+            gc.setFill(isPowered ? Color.GREEN : Color.DARKGRAY);
         }
 
-        // Restore the graphics context
-        gc.restore();
-    }
+        // Рисуем соединения из центра в каждое подключенное направление
+        for (Direction dir : connections) {
+            // Сохраняем состояние графического контекста
+            gc.save();
 
-    public WireType getWireType() {
-        return wireType;
+            // Перемещаемся в центр ячейки
+            gc.translate(centerX, centerY);
+
+            // Вращаем в соответствии с направлением
+            gc.rotate(dir.getDegrees());
+
+            // Рисуем линию от центра до края в нужном направлении
+            gc.fillRect(-wireWidth/2, -lineLength, wireWidth, lineLength);
+
+            // Восстанавливаем графический контекст
+            gc.restore();
+        }
     }
 
     @Override
     public void rotate() {
         super.rotate();
-        // Additional logic specific to WireNode rotation if needed
+
+        // Обновляем соединения при вращении
+        Set<Direction> newConnections = new HashSet<>();
+        for (Direction dir : connections) {
+            // Вращаем каждое направление на 90 градусов
+            int newDegrees = (dir.getDegrees() + 90) % 360;
+            newConnections.add(Direction.fromDegrees(newDegrees));
+        }
+
+        connections = newConnections;
+    }
+
+    private boolean hasDisconnectedEnd = false;
+
+    // Добавьте геттер и сеттер
+    public boolean hasDisconnectedEnd() {
+        return hasDisconnectedEnd;
+    }
+
+    public void setDisconnectedEnd(boolean disconnected) {
+        this.hasDisconnectedEnd = disconnected;
+    }
+
+    public boolean removeConnection(Direction direction) {
+        if (connections.contains(direction)) {
+            connections.remove(direction);
+            return true;
+        }
+        return false;
     }
 }
+
+

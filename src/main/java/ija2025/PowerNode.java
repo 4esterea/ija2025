@@ -3,16 +3,36 @@ package ija2025;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 public class PowerNode extends GameNode {
+
+    private Set<WireNode.Direction> activeDirections;
 
     public PowerNode(int row, int col) {
         super(row, col);
-        this.isPowered = true; // Power nodes are always powered
+        // По умолчанию активны все направления
+        activeDirections = new HashSet<>(Arrays.asList(
+                WireNode.Direction.UP,
+                WireNode.Direction.RIGHT,
+                WireNode.Direction.DOWN,
+                WireNode.Direction.LEFT
+        ));
+    }
+
+    public void setActiveDirections(Set<WireNode.Direction> directions) {
+        this.activeDirections = directions;
+    }
+
+    public Set<WireNode.Direction> getActiveDirections() {
+        return activeDirections;
     }
 
     @Override
     public void draw(GraphicsContext gc) {
-        double cellSize = 50; // Default cell size
+        double cellSize = gameManager.getCellSize();
         double x = col * cellSize;
         double y = row * cellSize;
 
