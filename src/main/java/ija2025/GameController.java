@@ -56,6 +56,16 @@ public class GameController implements Initializable {
     private Stage pausePopup;
     private boolean isPaused = false;
 
+    private GameManager gameManager;
+
+    // Static variable to store the selected difficulty
+    private static GameManager.Difficulty selectedDifficulty = GameManager.Difficulty.EASY;
+
+    // Static method to set the selected difficulty
+    public static void setSelectedDifficulty(GameManager.Difficulty difficulty) {
+        selectedDifficulty = difficulty;
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupButtonTransitions();
@@ -340,7 +350,74 @@ public class GameController implements Initializable {
 
     private void setupGameField() {
         gameField.setStyle("-fx-border-color: rgb(60, 63, 65); -fx-border-width: 2px;");
-        // TODO: Add game field setup logic here
+
+        // Initialize the game manager with the selected difficulty
+        gameManager = new GameManager(selectedDifficulty);
+
+        // Initialize the game
+        gameManager.initializeGame(gameField);
+
+        // Check for win condition after each move
+        gameField.setOnMouseClicked(event -> {
+            if (gameManager.isGameWon()) {
+                showWinMessage();
+            }
+        });
+    }
+
+    private void showWinMessage() {
+        // Pause the game
+        isPaused = true;
+        timeline.pause();
+
+        // Create a popup to show the win message
+        Stage winPopup = new Stage();
+        winPopup.initModality(Modality.APPLICATION_MODAL);
+        winPopup.initStyle(StageStyle.UNDECORATED);
+        winPopup.initOwner(pauseButton.getScene().getWindow());
+
+        VBox winLayout = new VBox(20);
+        winLayout.setAlignment(Pos.CENTER);
+        winLayout.setStyle("-fx-background-color: rgb(43, 45, 48); -fx-padding: 20px;");
+
+        Text winTitle = new Text("Congratulations!");
+        winTitle.setStyle("-fx-fill: rgb(255, 215, 0); -fx-font-size: 24px;");
+        winTitle.setFont(new Font("Papyrus", 24));
+
+        Text winMessage = new Text("You've completed the puzzle!");
+        winMessage.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 16px;");
+        winMessage.setFont(new Font("Papyrus", 16));
+
+        Text timeText = new Text("Time: " + timerText.getText());
+        timeText.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 16px;");
+        timeText.setFont(new Font("Papyrus", 16));
+
+        Button mainMenuButton = createStyledButton("Main Menu");
+        Button newGameButton = createStyledButton("New Game");
+
+        mainMenuButton.setOnAction(e -> {
+            Stage primaryStage = (Stage) winPopup.getOwner();
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
+            winPopup.close();
+        });
+
+        newGameButton.setOnAction(e -> {
+            Stage primaryStage = (Stage) winPopup.getOwner();
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "difficulty-view.fxml");
+            winPopup.close();
+        });
+
+        winLayout.getChildren().addAll(winTitle, winMessage, timeText, newGameButton, mainMenuButton);
+
+        Scene winScene = new Scene(winLayout, 350, 300);
+        winPopup.setScene(winScene);
+
+        winPopup.setX(pauseButton.getScene().getWindow().getX() +
+                     (pauseButton.getScene().getWindow().getWidth() - 350) / 2);
+        winPopup.setY(pauseButton.getScene().getWindow().getY() + 
+                     (pauseButton.getScene().getWindow().getHeight() - 300) / 2);
+
+        winPopup.show();
     }
 
     private void startTimer() {

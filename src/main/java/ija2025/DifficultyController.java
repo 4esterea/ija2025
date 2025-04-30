@@ -67,6 +67,26 @@ public class DifficultyController implements Initializable {
 
     private void loadGameView(String difficulty) {
         System.out.println("Starting game with " + difficulty + " difficulty");
+
+        // Convert string difficulty to enum
+        GameManager.Difficulty difficultyEnum;
+        switch (difficulty) {
+            case "Easy":
+                difficultyEnum = GameManager.Difficulty.EASY;
+                break;
+            case "Medium":
+                difficultyEnum = GameManager.Difficulty.MEDIUM;
+                break;
+            case "Hard":
+                difficultyEnum = GameManager.Difficulty.HARD;
+                break;
+            default:
+                difficultyEnum = GameManager.Difficulty.EASY;
+        }
+
+        // Store the selected difficulty in a static variable to be accessed by GameController
+        GameController.setSelectedDifficulty(difficultyEnum);
+
         SceneTransitionManager.switchScene(easyButton, "game-view.fxml");
     }
 
