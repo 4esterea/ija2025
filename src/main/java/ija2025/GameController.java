@@ -25,6 +25,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
 
 import java.io.IOException;
 import java.net.URL;
@@ -43,6 +46,9 @@ public class GameController implements Initializable {
 
     @FXML
     private Button stepForwardButton;
+
+    @FXML
+    private Button solutionButton;
 
     @FXML
     private Pane gameField;
@@ -89,6 +95,10 @@ public class GameController implements Initializable {
 
         stepBackButton.setOnAction(event -> {
             stepBack();
+        });
+
+        solutionButton.setOnAction(event -> {
+           showSolution();
         });
     }
 
@@ -347,6 +357,132 @@ public class GameController implements Initializable {
         System.out.println("Step Forward");
         // TODO: Implement step forward logic
     }
+
+    private String getNodeInfo(GameNode node) {
+        int row = node.getRow();
+        int col = node.getCol();
+        int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
+
+        String nodeType = "";
+        if (node instanceof PowerNode) {
+            nodeType = "P";
+        } else if (node instanceof LightBulbNode) {
+            nodeType = "L";
+        } else if (node instanceof WireNode) {
+            nodeType = "W";
+        }
+
+        // Возвращаем тип узла и необходимое количество поворотов
+        return nodeType + rotationsNeeded;
+    }
+
+    private void drawSolutionGrid(GraphicsContext gc, int gridSize, double cellSize) {
+        // Очищаем холст
+        gc.clearRect(0, 0, gridSize * cellSize, gridSize * cellSize);
+
+        // Рисуем сетку
+        gc.setStroke(Color.rgb(60, 63, 65));
+        gc.setLineWidth(1);
+
+        // Рисуем горизонтальные и вертикальные линии
+        for (int i = 0; i <= gridSize; i++) {
+            gc.strokeLine(0, i * cellSize, gridSize * cellSize, i * cellSize);
+            gc.strokeLine(i * cellSize, 0, i * cellSize, gridSize * cellSize);
+        }
+
+        // Отображаем элементы решения с числами
+        GameNode[][] grid = gameManager.getGrid();
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                if (grid[row][col] != null) {
+                    GameNode node = grid[row][col];
+                    // Рисуем фон ячейки
+                    gc.setFill(Color.rgb(30, 31, 34));
+                    gc.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+
+                    // Получаем информацию о узле
+                    String nodeInfo = getNodeInfo(node);
+
+                    // Подбираем цвет в зависимости от кол-ва требуемых поворотов
+                    int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
+                    if (rotationsNeeded == 0) {
+                        gc.setFill(Color.rgb(100, 200, 100)); // зеленый - правильное положение
+                    } else {
+                        gc.setFill(Color.rgb(200, 200, 100)); // желтый - требуются повороты
+                    }
+
+                    // Рисуем текст
+                    gc.setFont(new Font("Arial", cellSize / 3));
+                    double textWidth = gc.getFont().getSize() * nodeInfo.length() * 0.6;
+                    double textHeight = gc.getFont().getSize();
+                    double textX = col * cellSize + (cellSize - textWidth) / 2;
+                    double textY = row * cellSize + (cellSize + textHeight) / 2;
+
+                    gc.fillText(nodeInfo, textX, textY);
+                }
+            }
+        }
+    }
+    private void showSolution() {
+        // Создаем новое окно
+        Stage solutionStage = new Stage();
+        solutionStage.initModality(Modality.APPLICATION_MODAL);
+        solutionStage.initStyle(StageStyle.UNDECORATED);
+        solutionStage.initOwner(solutionButton.getScene().getWindow());
+
+        // Создаем контейнер для содержимого
+        BorderPane solutionLayout = new BorderPane();
+        solutionLayout.setStyle("-fx-background-color: rgb(43, 45, 48); -fx-padding: 20px;");
+
+        // Заголовок окна
+        Text solutionTitle = new Text("Решение");
+        solutionTitle.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 24px;");
+        solutionTitle.setFont(new Font("Papyrus", 24));
+
+        // Создаем холст для отображения сетки с решением
+        int gridSize = gameManager.getGridSize();
+        double cellSize = Math.min(500, 500) / gridSize;
+        Canvas solutionCanvas = new Canvas(gridSize * cellSize, gridSize * cellSize);
+        GraphicsContext gc = solutionCanvas.getGraphicsContext2D();
+
+        // Рисуем сетку с цифрами
+        drawSolutionGrid(gc, gridSize, cellSize);
+
+        // Кнопка закрытия
+        Button closeButton = createStyledButton("Закрыть");
+        closeButton.setOnAction(e -> solutionStage.close());
+
+        // Компоновка элементов окна
+        VBox topBox = new VBox(10, solutionTitle);
+        topBox.setAlignment(Pos.CENTER);
+
+        VBox centerBox = new VBox(20, solutionCanvas);
+        centerBox.setAlignment(Pos.CENTER);
+
+        VBox bottomBox = new VBox(10, closeButton);
+        bottomBox.setAlignment(Pos.CENTER);
+
+        solutionLayout.setTop(topBox);
+        solutionLayout.setCenter(centerBox);
+        solutionLayout.setBottom(bottomBox);
+
+        // Устанавливаем сцену и размер окна
+        Scene solutionScene = new Scene(solutionLayout);
+        solutionStage.setScene(solutionScene);
+
+        // Позиционируем окно по центру относительно родителя
+        solutionStage.setWidth(gridSize * cellSize + 100);
+        solutionStage.setHeight(gridSize * cellSize + 200);
+        solutionStage.setX(solutionButton.getScene().getWindow().getX() +
+                (solutionButton.getScene().getWindow().getWidth() - solutionStage.getWidth()) / 2);
+        solutionStage.setY(solutionButton.getScene().getWindow().getY() +
+                (solutionButton.getScene().getWindow().getHeight() - solutionStage.getHeight()) / 2);
+
+        // Показываем окно
+        solutionStage.show();
+    }
+
+
 
     private void setupGameField() {
         gameField.setStyle("-fx-border-color: rgb(60, 63, 65); -fx-border-width: 2px;");
