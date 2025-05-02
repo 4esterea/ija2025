@@ -726,8 +726,6 @@ public class GameManager {
         drawGrid();
     }
 
-
-
     private void setupClickHandlers(Pane gamePane) {
         gameCanvas.setOnMouseClicked(event -> {
             double cellSize = gameCanvas.getWidth() / gridSize;

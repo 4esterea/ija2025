@@ -133,246 +133,75 @@ public class GameController implements Initializable {
     }
 
     private void setupButtonTransitions() {
-        if (pauseButton != null) {
-            Color defaultBgColor = Color.rgb(43, 45, 48);
-            Color hoverBgColor = Color.rgb(30, 31, 34);
-            Color defaultTextColor = Color.rgb(205, 205, 205);
-            Color hoverTextColor = Color.rgb(255, 255, 255);
-            Color pressedBgColor = Color.rgb(80, 82, 85); // Lighter background
-            Color pressedTextColor = Color.rgb(230, 230, 230); // Lighter text
-            Color pressedBorderColor = Color.rgb(100, 103, 105); // Lighter border
+        // Список всех кнопок с иконками
+        Button[] buttons = {pauseButton, stepBackButton, stepForwardButton, solutionButton};
 
-            pauseButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                               "-fx-text-fill: rgb(205, 205, 205); " +
-                               "-fx-border-color: rgb(30, 31, 34); " +
-                               "-fx-border-width: 1px; " +
-                               "-fx-border-radius: 5px; " +
-                               "-fx-background-radius: 5px;");
+        // Определение цветов для разных состояний
+        String defaultStyle = "-fx-background-color: rgb(43, 45, 48); " +
+                "-fx-text-fill: rgb(205, 205, 205); " +
+                "-fx-border-color: rgb(30, 31, 34); " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 5px; " +
+                "-fx-background-radius: 5px;";
 
-            pauseButton.setOnMouseEntered(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), pauseButton);
+        String hoverStyle = "-fx-background-color: rgb(30, 31, 34); " +
+                "-fx-text-fill: rgb(255, 255, 255); " +
+                "-fx-border-color: rgb(60, 63, 65); " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 5px; " +
+                "-fx-background-radius: 5px;";
+
+        String pressedStyle = "-fx-background-color: rgb(80, 82, 85); " +
+                "-fx-text-fill: rgb(230, 230, 230); " +
+                "-fx-border-color: rgb(100, 103, 105); " +
+                "-fx-border-width: 1px; " +
+                "-fx-border-radius: 5px; " +
+                "-fx-background-radius: 5px;";
+
+        for (Button button : buttons) {
+            if (button == null) continue;
+
+            // Устанавливаем начальный стиль
+            button.setStyle(defaultStyle);
+
+            // При наведении мыши
+            button.setOnMouseEntered(e -> {
+                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
                 scaleTransition.setToX(1.05);
                 scaleTransition.setToY(1.05);
                 scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                pauseButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                                   "-fx-text-fill: rgb(255, 255, 255); " +
-                                   "-fx-border-color: rgb(60, 63, 65); " +
-                                   "-fx-border-width: 1px; " +
-                                   "-fx-border-radius: 5px; " +
-                                   "-fx-background-radius: 5px;");
-
+                button.setStyle(hoverStyle);
                 scaleTransition.play();
             });
 
-            pauseButton.setOnMousePressed(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), pauseButton);
+            // При нажатии
+            button.setOnMousePressed(e -> {
+                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(100), button);
                 scaleTransition.setToX(0.95);
                 scaleTransition.setToY(0.95);
                 scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                pauseButton.setStyle("-fx-background-color: rgb(80, 82, 85); " + // Lighter background
-                                   "-fx-text-fill: rgb(230, 230, 230); " + // Lighter text
-                                   "-fx-border-color: rgb(100, 103, 105); " + // Lighter border
-                                   "-fx-border-width: 1px; " +
-                                   "-fx-border-radius: 5px; " +
-                                   "-fx-background-radius: 5px;");
-
+                button.setStyle(pressedStyle);
                 scaleTransition.play();
             });
 
-            pauseButton.setOnMouseReleased(e -> {
-                if (pauseButton.isHover()) {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), pauseButton);
-                    scaleTransition.setToX(1.05);
-                    scaleTransition.setToY(1.05);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    pauseButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                                       "-fx-text-fill: rgb(255, 255, 255); " +
-                                       "-fx-border-color: rgb(60, 63, 65); " +
-                                       "-fx-border-width: 1px; " +
-                                       "-fx-border-radius: 5px; " +
-                                       "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                } else {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), pauseButton);
-                    scaleTransition.setToX(1.0);
-                    scaleTransition.setToY(1.0);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    pauseButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                                       "-fx-text-fill: rgb(205, 205, 205); " +
-                                       "-fx-border-color: rgb(30, 31, 34); " +
-                                       "-fx-border-width: 1px; " +
-                                       "-fx-border-radius: 5px; " +
-                                       "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                }
+            // При отпускании
+            button.setOnMouseReleased(e -> {
+                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(100), button);
+                scaleTransition.setToX(button.isHover() ? 1.05 : 1.0);
+                scaleTransition.setToY(button.isHover() ? 1.05 : 1.0);
+                button.setStyle(button.isHover() ? hoverStyle : defaultStyle);
+                scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
+                scaleTransition.play();
             });
 
-            pauseButton.setOnMouseExited(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), pauseButton);
+            // При уходе мыши
+            button.setOnMouseExited(e -> {
+                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
                 scaleTransition.setToX(1.0);
                 scaleTransition.setToY(1.0);
+                button.setStyle(defaultStyle);
                 scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                pauseButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                                   "-fx-text-fill: rgb(205, 205, 205); " +
-                                   "-fx-border-color: rgb(30, 31, 34); " +
-                                   "-fx-border-width: 1px; " +
-                                   "-fx-border-radius: 5px; " +
-                                   "-fx-background-radius: 5px;");
-
                 scaleTransition.play();
-            });
-        }
-
-        if (stepBackButton != null) {
-            stepBackButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                    "-fx-text-fill: rgb(205, 205, 205); " +
-                    "-fx-border-color: rgb(30, 31, 34); " +
-                    "-fx-border-width: 1px; " +
-                    "-fx-border-radius: 5px; " +
-                    "-fx-background-radius: 5px;");
-
-            stepBackButton.setOnMouseEntered(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), stepBackButton);
-                scaleTransition.setToX(1.05);
-                scaleTransition.setToY(1.05);
-                scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                stepBackButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                        "-fx-text-fill: rgb(255, 255, 255); " +
-                        "-fx-border-color: rgb(60, 63, 65); " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 5px; " +
-                        "-fx-background-radius: 5px;");
-
-                scaleTransition.play();
-            });
-
-            stepBackButton.setOnMousePressed(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepBackButton);
-                scaleTransition.setToX(0.95);
-                scaleTransition.setToY(0.95);
-                scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                stepBackButton.setStyle("-fx-background-color: rgb(80, 82, 85); " +
-                        "-fx-text-fill: rgb(230, 230, 230); " +
-                        "-fx-border-color: rgb(100, 103, 105); " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 5px; " +
-                        "-fx-background-radius: 5px;");
-
-                scaleTransition.play();
-            });
-
-            stepBackButton.setOnMouseReleased(e -> {
-                if (stepBackButton.isHover()) {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepBackButton);
-                    scaleTransition.setToX(1.05);
-                    scaleTransition.setToY(1.05);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    stepBackButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                            "-fx-text-fill: rgb(255, 255, 255); " +
-                            "-fx-border-color: rgb(60, 63, 65); " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 5px; " +
-                            "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                } else {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepBackButton);
-                    scaleTransition.setToX(1.0);
-                    scaleTransition.setToY(1.0);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    stepBackButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                            "-fx-text-fill: rgb(205, 205, 205); " +
-                            "-fx-border-color: rgb(30, 31, 34); " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 5px; " +
-                            "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                }
-            });
-        }
-
-        if (stepForwardButton != null) {
-            stepForwardButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                    "-fx-text-fill: rgb(205, 205, 205); " +
-                    "-fx-border-color: rgb(30, 31, 34); " +
-                    "-fx-border-width: 1px; " +
-                    "-fx-border-radius: 5px; " +
-                    "-fx-background-radius: 5px;");
-
-            stepForwardButton.setOnMouseEntered(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), stepForwardButton);
-                scaleTransition.setToX(1.05);
-                scaleTransition.setToY(1.05);
-                scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                stepForwardButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                        "-fx-text-fill: rgb(255, 255, 255); " +
-                        "-fx-border-color: rgb(60, 63, 65); " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 5px; " +
-                        "-fx-background-radius: 5px;");
-
-                scaleTransition.play();
-            });
-
-            stepForwardButton.setOnMousePressed(e -> {
-                ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepForwardButton);
-                scaleTransition.setToX(0.95);
-                scaleTransition.setToY(0.95);
-                scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                stepForwardButton.setStyle("-fx-background-color: rgb(80, 82, 85); " +
-                        "-fx-text-fill: rgb(230, 230, 230); " +
-                        "-fx-border-color: rgb(100, 103, 105); " +
-                        "-fx-border-width: 1px; " +
-                        "-fx-border-radius: 5px; " +
-                        "-fx-background-radius: 5px;");
-
-                scaleTransition.play();
-            });
-
-            stepForwardButton.setOnMouseReleased(e -> {
-                if (stepForwardButton.isHover()) {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepForwardButton);
-                    scaleTransition.setToX(1.05);
-                    scaleTransition.setToY(1.05);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    stepForwardButton.setStyle("-fx-background-color: rgb(30, 31, 34); " +
-                            "-fx-text-fill: rgb(255, 255, 255); " +
-                            "-fx-border-color: rgb(60, 63, 65); " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 5px; " +
-                            "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                } else {
-                    ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), stepForwardButton);
-                    scaleTransition.setToX(1.0);
-                    scaleTransition.setToY(1.0);
-                    scaleTransition.setInterpolator(Interpolator.EASE_BOTH);
-
-                    stepForwardButton.setStyle("-fx-background-color: rgb(43, 45, 48); " +
-                            "-fx-text-fill: rgb(205, 205, 205); " +
-                            "-fx-border-color: rgb(30, 31, 34); " +
-                            "-fx-border-width: 1px; " +
-                            "-fx-border-radius: 5px; " +
-                            "-fx-background-radius: 5px;");
-
-                    scaleTransition.play();
-                }
             });
         }
     }
@@ -533,204 +362,62 @@ public class GameController implements Initializable {
             System.out.println("Нет следующих ходов");
         }
     }
-    private void applyMove(ObjectNode moveNode, boolean isPrevMove) {
-        try {
-            int row = moveNode.get("row").asInt();
-            int col = moveNode.get("col").asInt();
-            int targetRotation;
-
-            // Выбираем нужный поворот в зависимости от направления
-            if (isPrevMove) {
-                targetRotation = moveNode.get("prevRotation").asInt();
-            } else {
-                targetRotation = moveNode.get("newRotation").asInt();
-            }
-
-            GameNode[][] grid = gameManager.getGrid();
-            GameNode node = grid[row][col];
-
-            if (node != null) {
-                // Поворачиваем узел до нужного положения
-                while (node.getRotation() != targetRotation) {
-                    node.rotate();
-                }
-
-                // Обновляем поток энергии
-                gameManager.updatePowerFlow();
-
-                // Обновляем окно решения если оно открыто
-                updateSolutionIfShowing();
-            }
-        } catch (Exception e) {
-            System.err.println("Ошибка при применении хода: " + e.getMessage());
-        }
-    }
-    public void updateMoveHistory() {
-        loadMoveHistory(); // Перезагружаем историю из файла
-    }
-
-    private String getNodeInfo(GameNode node) {
-        int row = node.getRow();
-        int col = node.getCol();
-        int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
-
-        String nodeType = "";
-        if (node instanceof PowerNode) {
-            nodeType = "P";
-        } else if (node instanceof LightBulbNode) {
-            nodeType = "L";
-        } else if (node instanceof WireNode) {
-            nodeType = "W";
-        }
-
-        // Возвращаем тип узла и необходимое количество поворотов
-        return nodeType + rotationsNeeded;
-    }
-
-    private void drawSolutionGrid(GraphicsContext gc, int gridSize, double cellSize) {
-        // Очищаем холст
-        gc.clearRect(0, 0, gridSize * cellSize, gridSize * cellSize);
-
-        // Рисуем сетку
-        gc.setStroke(Color.rgb(60, 63, 65));
-        gc.setLineWidth(1);
-
-        // Рисуем горизонтальные и вертикальные линии
-        for (int i = 0; i <= gridSize; i++) {
-            gc.strokeLine(0, i * cellSize, gridSize * cellSize, i * cellSize);
-            gc.strokeLine(i * cellSize, 0, i * cellSize, gridSize * cellSize);
-        }
-
-        // Отображаем элементы решения с числами
-        GameNode[][] grid = gameManager.getGrid();
-        for (int row = 0; row < gridSize; row++) {
-            for (int col = 0; col < gridSize; col++) {
-                if (grid[row][col] != null) {
-                    GameNode node = grid[row][col];
-                    // Рисуем фон ячейки
-                    gc.setFill(Color.rgb(30, 31, 34));
-                    gc.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-
-                    // Получаем информацию о узле
-                    String nodeInfo = getNodeInfo(node);
-
-                    // Подбираем цвет в зависимости от кол-ва требуемых поворотов
-                    int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
-                    if (rotationsNeeded == 0) {
-                        gc.setFill(Color.rgb(100, 200, 100)); // зеленый - правильное положение
-                    } else {
-                        gc.setFill(Color.rgb(200, 200, 100)); // желтый - требуются повороты
-                    }
-
-                    // Рисуем текст
-                    gc.setFont(new Font("Arial", cellSize / 3));
-                    double textWidth = gc.getFont().getSize() * nodeInfo.length() * 0.6;
-                    double textHeight = gc.getFont().getSize();
-                    double textX = col * cellSize + (cellSize - textWidth) / 2;
-                    double textY = row * cellSize + (cellSize + textHeight) / 2;
-
-                    gc.fillText(nodeInfo, textX, textY);
-                }
-            }
-        }
-    }
 
     public void updateSolutionIfShowing() {
         if (isSolutionShowing && solutionStage != null && solutionStage.isShowing()) {
-            drawSolutionGrid(solutionCanvas.getGraphicsContext2D(),
-                    gameManager.getGridSize(),
-                    solutionCanvas.getWidth() / gameManager.getGridSize());
-        }
-    }
-    private void updateSolution() {
-        if (solutionStage != null && solutionStage.isShowing() && solutionCanvas != null) {
-            GraphicsContext gc = solutionCanvas.getGraphicsContext2D();
-            int gridSize = gameManager.getGridSize();
-            double cellSize = solutionCanvas.getWidth() / gridSize;
-            drawSolutionGrid(gc, gridSize, cellSize);
+            Scene scene = solutionStage.getScene();
+            if (scene != null && scene.getRoot() instanceof BorderPane) {
+                BorderPane rootPane = (BorderPane) scene.getRoot();
+                SolutionController controller = (SolutionController) rootPane.getUserData();
+                if (controller != null) {
+                    controller.updateSolution();
+                }
+            }
         }
     }
     private void showSolution() {
         if (solutionStage != null && solutionStage.isShowing()) {
-            // Если окно уже отображается, просто обновляем его
-            updateSolution();
+            updateSolutionIfShowing();
             return;
         }
 
-        // Создаем новое окно (не модальное)
-        solutionStage = new Stage();
-        solutionStage.initStyle(StageStyle.DECORATED);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("solution-view.fxml"));
+            Parent root = loader.load();
 
-        // Устанавливаем владельца
-        solutionStage.initOwner(solutionButton.getScene().getWindow());
+            SolutionController controller = loader.getController();
+            controller.setGameManager(gameManager);
 
-        // Обработчик закрытия основного окна
-        Stage primaryStage = (Stage) solutionButton.getScene().getWindow();
-        primaryStage.setOnCloseRequest(event -> {
-            if (solutionStage != null && solutionStage.isShowing()) {
-                solutionStage.close();
-                isSolutionShowing = false;
-            }
-        });
+            ((BorderPane)root).setUserData(controller);
 
-        // Создаем контейнер для содержимого
-        BorderPane solutionLayout = new BorderPane();
-        solutionLayout.setStyle("-fx-background-color: rgb(43, 45, 48); -fx-padding: 20px;");
+            solutionStage = new Stage();
+            solutionStage.initStyle(StageStyle.DECORATED);
+            solutionStage.initOwner(solutionButton.getScene().getWindow());
+            solutionStage.setResizable(false);
+            solutionStage.setOnCloseRequest(event -> isSolutionShowing = false);
 
-        // Заголовок окна
-        Text solutionTitle = new Text("Решение");
-        solutionTitle.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 24px;");
-        solutionTitle.setFont(new Font("Papyrus", 24));
+            Scene scene = new Scene(root);
+            solutionStage.setScene(scene);
+            solutionStage.setTitle("Решение");
 
-        // Создаем холст для отображения сетки с решением
-        int gridSize = gameManager.getGridSize();
-        double cellSize = Math.min(500, 500) / gridSize;
-        solutionCanvas = new Canvas(gridSize * cellSize, gridSize * cellSize);
-        GraphicsContext gc = solutionCanvas.getGraphicsContext2D();
+            int gridSize = gameManager.getGridSize();
+            double cellSize = Math.min(350, 350) / gridSize;
+            solutionStage.setWidth(gridSize * cellSize + 50);
+            solutionStage.setHeight(gridSize * cellSize + 120);
 
-        // Рисуем сетку с цифрами
-        drawSolutionGrid(gc, gridSize, cellSize);
+            Stage primaryStage = (Stage) solutionButton.getScene().getWindow();
+            solutionStage.setX(primaryStage.getX() +
+                    (primaryStage.getWidth() - solutionStage.getWidth()) / 2);
+            solutionStage.setY(primaryStage.getY() +
+                    (primaryStage.getHeight() - solutionStage.getHeight()) / 2);
 
-        // Кнопка закрытия
-        Button closeButton = createStyledButton("Закрыть");
-        closeButton.setOnAction(e -> {
-            solutionStage.close();
-            isSolutionShowing = false;
-        });
+            solutionStage.show();
+            isSolutionShowing = true;
 
-        // Компоновка элементов окна
-        VBox topBox = new VBox(10, solutionTitle);
-        topBox.setAlignment(Pos.CENTER);
-
-        VBox centerBox = new VBox(20, solutionCanvas);
-        centerBox.setAlignment(Pos.CENTER);
-
-        VBox bottomBox = new VBox(10, closeButton);
-        bottomBox.setAlignment(Pos.CENTER);
-
-        solutionLayout.setTop(topBox);
-        solutionLayout.setCenter(centerBox);
-        solutionLayout.setBottom(bottomBox);
-
-        // Устанавливаем сцену и размер окна
-        Scene solutionScene = new Scene(solutionLayout);
-        solutionStage.setScene(solutionScene);
-        solutionStage.setTitle("Решение головоломки");
-
-        // Устанавливаем обработчик закрытия окна решения
-        solutionStage.setOnCloseRequest(event -> isSolutionShowing = false);
-
-        // Позиционируем окно
-        solutionStage.setWidth(gridSize * cellSize + 100);
-        solutionStage.setHeight(gridSize * cellSize + 200);
-        solutionStage.setX(solutionButton.getScene().getWindow().getX() +
-                (solutionButton.getScene().getWindow().getWidth() - solutionStage.getWidth()) / 2);
-        solutionStage.setY(solutionButton.getScene().getWindow().getY() +
-                (solutionButton.getScene().getWindow().getHeight() - solutionStage.getHeight()) / 2);
-
-        // Показываем окно и устанавливаем флаг
-        solutionStage.show();
-        isSolutionShowing = true;
+        } catch (IOException e) {
+            System.err.println("Ошибка при загрузке FXML: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
 
@@ -770,7 +457,7 @@ public class GameController implements Initializable {
 
         VBox winLayout = new VBox(20);
         winLayout.setAlignment(Pos.CENTER);
-        winLayout.setStyle("-fx-background-color: rgb(43, 45, 48); -fx-padding: 20px;");
+        winLayout.setStyle("-fx-background-color: rgb(30, 31, 34); -fx-padding: 20px; -fx-border-width: 2px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 10, 0, 0, 2);");
 
         Text winTitle = new Text("Congratulations!");
         winTitle.setStyle("-fx-fill: rgb(255, 215, 0); -fx-font-size: 24px;");

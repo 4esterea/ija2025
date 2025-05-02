@@ -5,7 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
+import javafx.scene.image.Image;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -15,7 +15,9 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("main-view.fxml")));
         Scene scene = new Scene(root, 550, 650);
         stage.setScene(scene);
-        stage.setTitle("Hello!");
+        stage.setTitle("lightbulb");
+        Image icon = new Image(getClass().getResourceAsStream("/ija2025/media/bulb_icon.png"));
+        stage.getIcons().add(icon);
         stage.setResizable(false);
         stage.show();
     }

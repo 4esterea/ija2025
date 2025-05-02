@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.*?>
+<?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
 <BorderPane fx:id="mainWindow" prefHeight="650.0" prefWidth="550.0" styleClass="mainWindow" stylesheets="@styles/styles.css" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ija2025.MainController">
    <top>
-      <ImageView id="main-game-icon" fitHeight="286.0" fitWidth="290.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER">
+      <StackPane alignment="CENTER" BorderPane.alignment="CENTER">
          <BorderPane.margin>
             <Insets top="50.0" />
          </BorderPane.margin>
-         <image>
-            <Image url="@media/bulb.png" />
-         </image>
-      </ImageView>
+         <Group fx:id="bulbIcon">
+         </Group>
+      </StackPane>
    </top>
    <center>
       <VBox alignment="TOP_CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
@@ -29,7 +28,7 @@
          </Text>
          <Button fx:id="playButton" mnemonicParsing="false" text="Play">
             <VBox.margin>
-               <Insets top="50.0" />
+               <Insets top="20.0" />
             </VBox.margin>
             <padding>
                <Insets bottom="15.0" left="50.0" right="50.0" top="15.0" />
