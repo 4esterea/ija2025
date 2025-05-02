@@ -24,6 +24,9 @@ public class GameManager {
     private Canvas gameCanvas;
     private GraphicsContext gc;
     private Random random;
+    private Map<String, Integer> originalRotations = new HashMap<>();
+    private GameLogger gameLogger;
+    private boolean loggingEnabled = false;
 
     private double cellSize;
 
@@ -31,6 +34,7 @@ public class GameManager {
         this.difficulty = difficulty;
         this.lightBulbNodes = new ArrayList<>();
         this.random = new Random();
+        this.gameLogger = new GameLogger();
 
         // Установка размера сетки в зависимости от сложности
         switch (difficulty) {
@@ -57,8 +61,44 @@ public class GameManager {
     public double getCellSize() {
         return cellSize;
     }
+    public GameNode[][] getGrid() {
+        return grid;
+    }
+    public GameLogger getGameLogger() {
+        return gameLogger;
+    }
+    public void enableLogging() {
+        if (gameLogger != null) {
+            loggingEnabled = true;
+            gameLogger.setLoggingEnabled(true);
+        }
+    }
+
+    public void disableLogging() {
+        loggingEnabled = false;
+        if (gameLogger != null) {
+            gameLogger.setLoggingEnabled(false);
+        }
+    }
+    public boolean isLoggingEnabled() {
+        return loggingEnabled;
+    }
+
+    public void setLoggingEnabled(boolean enabled) {
+        this.loggingEnabled = enabled;
+        if (gameLogger != null) {
+            gameLogger.setLoggingEnabled(enabled);
+        }
+    }
+
+    private GameController gameController;
+
+    public void setGameController(GameController controller) {
+        this.gameController = controller;
+    }
 
     public void generateGameBoard() {
+        disableLogging();
         placePowerNode();
 
         boolean hasEmptyCell = true;
@@ -94,8 +134,11 @@ public class GameManager {
         }
         checkAllLightBulbsConnected();
         finalizePowerNodeConnections();
+        saveOriginalNodePositions();
         shuffleAllNodes();
         updatePowerFlow();
+        gameLogger.logInitialState(this);
+        enableLogging();
     }
 
     private void shuffleAllNodes(){
@@ -114,6 +157,67 @@ public class GameManager {
                 }
             }
         }
+    }
+
+    private void saveOriginalNodePositions() {
+        originalRotations.clear();
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                GameNode node = grid[row][col];
+                if (node != null) {
+                    String key = row + "," + col;
+                    originalRotations.put(key, node.getRotation());
+                }
+            }
+        }
+    }
+
+    public int getRotationsToOriginal(int row, int col) {
+        String key = row + "," + col;
+        GameNode node = grid[row][col];
+
+        if (node == null || !originalRotations.containsKey(key)) {
+            return 0;
+        }
+
+        int currentRotation = node.getRotation();
+        int originalRotation = originalRotations.get(key);
+
+        if (currentRotation == originalRotation) {
+            return 0;
+        }
+
+        // Вычисляем количество поворотов на 90 градусов (0-3)
+        int rotationsNeeded = (4 + (originalRotation - currentRotation) / 90) % 4;
+        // Проверяем, является ли узел проводом и применяем специальные правила
+        if (node instanceof WireNode) {
+            WireNode wire = (WireNode) node;
+            int connections = wire.getConnectedDirections().size();
+
+            // Для провода с 4 концами не нужно вращение
+            if (connections == 4) {
+                return 0;
+            }
+
+            // Для провода с 2 концами достаточно проверки на поворот на 180°
+            if (connections == 2) {
+                // Получаем список направлений
+                Set<WireNode.Direction> directions = wire.getConnectedDirections();
+
+                // Проверяем, является ли провод прямым (I-образным)
+                boolean isIType = (directions.contains(WireNode.Direction.UP) && directions.contains(WireNode.Direction.DOWN)) ||
+                        (directions.contains(WireNode.Direction.LEFT) && directions.contains(WireNode.Direction.RIGHT));
+
+                if (isIType) {
+                    // Для I-образного провода важно только 2 состояния (0° и 90°)
+                    return rotationsNeeded % 2;
+                } else {
+                    // Для L-образного провода важны все 4 состояния
+                    return rotationsNeeded;
+                }
+            }
+        }
+        return rotationsNeeded;
     }
 
     public void finalizePowerNodeConnections() {
@@ -618,6 +722,12 @@ public class GameManager {
         }
     }
 
+    public void redrawGrid() {
+        drawGrid();
+    }
+
+
+
     private void setupClickHandlers(Pane gamePane) {
         gameCanvas.setOnMouseClicked(event -> {
             double cellSize = gameCanvas.getWidth() / gridSize;
@@ -636,6 +746,11 @@ public class GameManager {
 
                     // Update power flow
                     updatePowerFlow();
+
+                    // Вызываем метод обновления окна с решением через контроллер
+                    if (gameController != null) {
+                        gameController.updateSolutionIfShowing();
+                    }
                 }
             }
         });
@@ -958,6 +1073,11 @@ public class GameManager {
 
     public Difficulty getDifficulty() {
         return difficulty;
+    }
+    public void logNodeRotation(GameNode node, int prevRotation) {
+        if (loggingEnabled && gameLogger != null) {
+            gameLogger.logMove(node, prevRotation);
+        }
     }
 
 }

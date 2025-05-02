@@ -25,6 +25,16 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 import java.io.IOException;
 import java.net.URL;
@@ -45,6 +55,9 @@ public class GameController implements Initializable {
     private Button stepForwardButton;
 
     @FXML
+    private Button solutionButton;
+
+    @FXML
     private Pane gameField;
 
     @FXML
@@ -55,6 +68,11 @@ public class GameController implements Initializable {
     private int minutes = 0;
     private Stage pausePopup;
     private boolean isPaused = false;
+    private Stage solutionStage;
+    private Canvas solutionCanvas;
+    private boolean isSolutionShowing = false;
+    private List<ObjectNode> movesList = new ArrayList<>();
+    private int currentMoveIndex = -1;
 
     private GameManager gameManager;
 
@@ -72,6 +90,7 @@ public class GameController implements Initializable {
         setupButtonActions();
         setupGameField();
         startTimer();
+        setupWindowCloseHandler();
     }
 
     private void setupButtonActions() {
@@ -88,7 +107,28 @@ public class GameController implements Initializable {
         });
 
         stepBackButton.setOnAction(event -> {
+
             stepBack();
+        });
+
+        solutionButton.setOnAction(event -> {
+
+            showSolution();
+        });
+    }
+
+    private void setupWindowCloseHandler() {
+        // Добавляем слушателя для сцены, чтобы получить доступ к Stage
+        gameWindow.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene != null) {
+                Stage stage = (Stage) newScene.getWindow();
+                stage.setOnCloseRequest(event -> {
+                    // Удаляем лог при закрытии окна
+                    if (gameManager != null && gameManager.getGameLogger() != null) {
+                        gameManager.getGameLogger().deleteLogFile();
+                    }
+                });
+            }
         });
     }
 
@@ -338,30 +378,382 @@ public class GameController implements Initializable {
     }
 
 
-    private void stepBack(){
-        System.out.println("Step Back");
-        // TODO: Implement step back logic
+    private void closeSolutionWindow() {
+        if (solutionStage != null) {
+            System.out.println("Закрытие окна с решением");
+            solutionStage.close();
+            solutionStage = null;
+            isSolutionShowing = false;
+        }
     }
 
-    private void stepForward(){
-        System.out.println("Step Forward");
-        // TODO: Implement step forward logic
+    private void loadMoveHistory() {
+        if (gameManager != null && gameManager.getGameLogger() != null) {
+            File logFile = gameManager.getGameLogger().getLogFile();
+            if (logFile != null && logFile.exists()) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode rootNode = mapper.readTree(logFile);
+                    JsonNode movesNode = rootNode.get("moves");
+
+                    movesList.clear();
+                    if (movesNode != null && movesNode.isArray()) {
+                        for (JsonNode moveNode : movesNode) {
+                            movesList.add((ObjectNode) moveNode);
+                        }
+                        // Устанавливаем индекс в положение ПЕРЕД первым ходом
+                        currentMoveIndex = movesList.size() - 1;
+                        System.out.println("Загружено ходов: " + movesList.size());
+                    }
+                } catch (IOException e) {
+                    System.err.println("Ошибка при загрузке истории ходов: " + e.getMessage());
+                }
+            }
+        }
     }
+
+    public void reloadMoveHistory() {
+        if (gameManager != null && gameManager.getGameLogger() != null) {
+            File logFile = gameManager.getGameLogger().getLogFile();
+            if (logFile != null && logFile.exists()) {
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode rootNode = mapper.readTree(logFile);
+                    JsonNode movesNode = rootNode.get("moves");
+
+                    movesList.clear();
+                    if (movesNode != null && movesNode.isArray()) {
+                        for (JsonNode moveNode : movesNode) {
+                            movesList.add((ObjectNode) moveNode);
+                        }
+                        // Устанавливаем текущий индекс в конец истории
+                        currentMoveIndex = movesList.size() - 1;
+                        System.out.println("Загружена история: " + movesList.size() + " ходов");
+                    }
+                } catch (IOException e) {
+                    System.err.println("Ошибка при загрузке истории ходов: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            } else {
+                System.err.println("Файл журнала не найден или недоступен");
+            }
+        } else {
+            System.err.println("GameManager или GameLogger не инициализированы");
+        }
+    }
+
+    private void stepBack() {
+        System.out.println("Step Back");
+
+        if (movesList.isEmpty()) {
+            System.out.println("История ходов пуста");
+            return;
+        }
+
+        if (currentMoveIndex >= 0) {
+            // Находим текущий ход
+            ObjectNode currentMove = movesList.get(currentMoveIndex);
+
+            // Получаем данные хода
+            int row = currentMove.get("row").asInt();
+            int col = currentMove.get("col").asInt();
+            int prevRotation = currentMove.get("prevRotation").asInt();
+
+            // Получаем узел из сетки
+            GameNode node = gameManager.getGrid()[row][col];
+
+            // Временно отключаем логирование
+            boolean wasLoggingEnabled = gameManager.isLoggingEnabled();
+            gameManager.setLoggingEnabled(false);
+
+            // Устанавливаем предыдущее вращение
+            while (node.getRotation() != prevRotation) {
+                node.rotate();
+            }
+
+            // Восстанавливаем исходное состояние логирования
+            gameManager.setLoggingEnabled(wasLoggingEnabled);
+
+            // Уменьшаем индекс после применения хода
+            currentMoveIndex--;
+            System.out.println("Возврат к ходу " + (currentMoveIndex + 1) + " из " + movesList.size());
+
+            // Обновляем сетку и поток энергии
+            gameManager.redrawGrid();
+            gameManager.updatePowerFlow();
+            updateSolutionIfShowing();
+        } else {
+            System.out.println("Нет предыдущих ходов");
+        }
+    }
+
+    private void stepForward() {
+        System.out.println("Step Forward");
+
+        if (movesList.isEmpty()) {
+            System.out.println("История ходов пуста");
+            return;
+        }
+
+        if (currentMoveIndex < movesList.size() - 1) {
+            // Увеличиваем индекс на 1, чтобы перейти к следующему ходу
+            currentMoveIndex++;
+
+            // Выводим информацию для отладки
+            System.out.println("Переход к ходу " + (currentMoveIndex + 1) + " из " + movesList.size());
+
+            // Находим следующий ход
+            ObjectNode nextMove = movesList.get(currentMoveIndex);
+
+            // Получаем данные хода
+            int row = nextMove.get("row").asInt();
+            int col = nextMove.get("col").asInt();
+            int newRotation = nextMove.get("newRotation").asInt();
+
+            // Получаем узел из сетки
+            GameNode node = gameManager.getGrid()[row][col];
+
+            // Временно отключаем логирование
+            boolean wasLoggingEnabled = gameManager.isLoggingEnabled();
+            gameManager.setLoggingEnabled(false);
+
+            // Устанавливаем новое вращение
+            while (node.getRotation() != newRotation) {
+                node.rotate();
+            }
+
+            // Восстанавливаем исходное состояние логирования
+            gameManager.setLoggingEnabled(wasLoggingEnabled);
+
+            // Обновляем сетку и поток энергии
+            gameManager.redrawGrid();
+            gameManager.updatePowerFlow();
+            updateSolutionIfShowing();
+        } else {
+            System.out.println("Нет следующих ходов");
+        }
+    }
+    private void applyMove(ObjectNode moveNode, boolean isPrevMove) {
+        try {
+            int row = moveNode.get("row").asInt();
+            int col = moveNode.get("col").asInt();
+            int targetRotation;
+
+            // Выбираем нужный поворот в зависимости от направления
+            if (isPrevMove) {
+                targetRotation = moveNode.get("prevRotation").asInt();
+            } else {
+                targetRotation = moveNode.get("newRotation").asInt();
+            }
+
+            GameNode[][] grid = gameManager.getGrid();
+            GameNode node = grid[row][col];
+
+            if (node != null) {
+                // Поворачиваем узел до нужного положения
+                while (node.getRotation() != targetRotation) {
+                    node.rotate();
+                }
+
+                // Обновляем поток энергии
+                gameManager.updatePowerFlow();
+
+                // Обновляем окно решения если оно открыто
+                updateSolutionIfShowing();
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка при применении хода: " + e.getMessage());
+        }
+    }
+    public void updateMoveHistory() {
+        loadMoveHistory(); // Перезагружаем историю из файла
+    }
+
+    private String getNodeInfo(GameNode node) {
+        int row = node.getRow();
+        int col = node.getCol();
+        int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
+
+        String nodeType = "";
+        if (node instanceof PowerNode) {
+            nodeType = "P";
+        } else if (node instanceof LightBulbNode) {
+            nodeType = "L";
+        } else if (node instanceof WireNode) {
+            nodeType = "W";
+        }
+
+        // Возвращаем тип узла и необходимое количество поворотов
+        return nodeType + rotationsNeeded;
+    }
+
+    private void drawSolutionGrid(GraphicsContext gc, int gridSize, double cellSize) {
+        // Очищаем холст
+        gc.clearRect(0, 0, gridSize * cellSize, gridSize * cellSize);
+
+        // Рисуем сетку
+        gc.setStroke(Color.rgb(60, 63, 65));
+        gc.setLineWidth(1);
+
+        // Рисуем горизонтальные и вертикальные линии
+        for (int i = 0; i <= gridSize; i++) {
+            gc.strokeLine(0, i * cellSize, gridSize * cellSize, i * cellSize);
+            gc.strokeLine(i * cellSize, 0, i * cellSize, gridSize * cellSize);
+        }
+
+        // Отображаем элементы решения с числами
+        GameNode[][] grid = gameManager.getGrid();
+        for (int row = 0; row < gridSize; row++) {
+            for (int col = 0; col < gridSize; col++) {
+                if (grid[row][col] != null) {
+                    GameNode node = grid[row][col];
+                    // Рисуем фон ячейки
+                    gc.setFill(Color.rgb(30, 31, 34));
+                    gc.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+
+                    // Получаем информацию о узле
+                    String nodeInfo = getNodeInfo(node);
+
+                    // Подбираем цвет в зависимости от кол-ва требуемых поворотов
+                    int rotationsNeeded = gameManager.getRotationsToOriginal(row, col);
+                    if (rotationsNeeded == 0) {
+                        gc.setFill(Color.rgb(100, 200, 100)); // зеленый - правильное положение
+                    } else {
+                        gc.setFill(Color.rgb(200, 200, 100)); // желтый - требуются повороты
+                    }
+
+                    // Рисуем текст
+                    gc.setFont(new Font("Arial", cellSize / 3));
+                    double textWidth = gc.getFont().getSize() * nodeInfo.length() * 0.6;
+                    double textHeight = gc.getFont().getSize();
+                    double textX = col * cellSize + (cellSize - textWidth) / 2;
+                    double textY = row * cellSize + (cellSize + textHeight) / 2;
+
+                    gc.fillText(nodeInfo, textX, textY);
+                }
+            }
+        }
+    }
+
+    public void updateSolutionIfShowing() {
+        if (isSolutionShowing && solutionStage != null && solutionStage.isShowing()) {
+            drawSolutionGrid(solutionCanvas.getGraphicsContext2D(),
+                    gameManager.getGridSize(),
+                    solutionCanvas.getWidth() / gameManager.getGridSize());
+        }
+    }
+    private void updateSolution() {
+        if (solutionStage != null && solutionStage.isShowing() && solutionCanvas != null) {
+            GraphicsContext gc = solutionCanvas.getGraphicsContext2D();
+            int gridSize = gameManager.getGridSize();
+            double cellSize = solutionCanvas.getWidth() / gridSize;
+            drawSolutionGrid(gc, gridSize, cellSize);
+        }
+    }
+    private void showSolution() {
+        if (solutionStage != null && solutionStage.isShowing()) {
+            // Если окно уже отображается, просто обновляем его
+            updateSolution();
+            return;
+        }
+
+        // Создаем новое окно (не модальное)
+        solutionStage = new Stage();
+        solutionStage.initStyle(StageStyle.DECORATED);
+
+        // Устанавливаем владельца
+        solutionStage.initOwner(solutionButton.getScene().getWindow());
+
+        // Обработчик закрытия основного окна
+        Stage primaryStage = (Stage) solutionButton.getScene().getWindow();
+        primaryStage.setOnCloseRequest(event -> {
+            if (solutionStage != null && solutionStage.isShowing()) {
+                solutionStage.close();
+                isSolutionShowing = false;
+            }
+        });
+
+        // Создаем контейнер для содержимого
+        BorderPane solutionLayout = new BorderPane();
+        solutionLayout.setStyle("-fx-background-color: rgb(43, 45, 48); -fx-padding: 20px;");
+
+        // Заголовок окна
+        Text solutionTitle = new Text("Решение");
+        solutionTitle.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 24px;");
+        solutionTitle.setFont(new Font("Papyrus", 24));
+
+        // Создаем холст для отображения сетки с решением
+        int gridSize = gameManager.getGridSize();
+        double cellSize = Math.min(500, 500) / gridSize;
+        solutionCanvas = new Canvas(gridSize * cellSize, gridSize * cellSize);
+        GraphicsContext gc = solutionCanvas.getGraphicsContext2D();
+
+        // Рисуем сетку с цифрами
+        drawSolutionGrid(gc, gridSize, cellSize);
+
+        // Кнопка закрытия
+        Button closeButton = createStyledButton("Закрыть");
+        closeButton.setOnAction(e -> {
+            solutionStage.close();
+            isSolutionShowing = false;
+        });
+
+        // Компоновка элементов окна
+        VBox topBox = new VBox(10, solutionTitle);
+        topBox.setAlignment(Pos.CENTER);
+
+        VBox centerBox = new VBox(20, solutionCanvas);
+        centerBox.setAlignment(Pos.CENTER);
+
+        VBox bottomBox = new VBox(10, closeButton);
+        bottomBox.setAlignment(Pos.CENTER);
+
+        solutionLayout.setTop(topBox);
+        solutionLayout.setCenter(centerBox);
+        solutionLayout.setBottom(bottomBox);
+
+        // Устанавливаем сцену и размер окна
+        Scene solutionScene = new Scene(solutionLayout);
+        solutionStage.setScene(solutionScene);
+        solutionStage.setTitle("Решение головоломки");
+
+        // Устанавливаем обработчик закрытия окна решения
+        solutionStage.setOnCloseRequest(event -> isSolutionShowing = false);
+
+        // Позиционируем окно
+        solutionStage.setWidth(gridSize * cellSize + 100);
+        solutionStage.setHeight(gridSize * cellSize + 200);
+        solutionStage.setX(solutionButton.getScene().getWindow().getX() +
+                (solutionButton.getScene().getWindow().getWidth() - solutionStage.getWidth()) / 2);
+        solutionStage.setY(solutionButton.getScene().getWindow().getY() +
+                (solutionButton.getScene().getWindow().getHeight() - solutionStage.getHeight()) / 2);
+
+        // Показываем окно и устанавливаем флаг
+        solutionStage.show();
+        isSolutionShowing = true;
+    }
+
+
 
     private void setupGameField() {
         gameField.setStyle("-fx-border-color: rgb(60, 63, 65); -fx-border-width: 2px;");
 
         // Initialize the game manager with the selected difficulty
         gameManager = new GameManager(selectedDifficulty);
+        gameManager.setGameController(this);
 
         // Initialize the game
         gameManager.initializeGame(gameField);
+
+        // Загружаем историю ходов
+        loadMoveHistory();
 
         // Check for win condition after each move
         gameField.setOnMouseClicked(event -> {
             if (gameManager.isGameWon()) {
                 showWinMessage();
             }
+            reloadMoveHistory();
         });
     }
 
@@ -396,6 +788,7 @@ public class GameController implements Initializable {
         Button newGameButton = createStyledButton("New Game");
 
         mainMenuButton.setOnAction(e -> {
+            closeSolutionWindow();
             Stage primaryStage = (Stage) winPopup.getOwner();
             SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
             winPopup.close();
@@ -471,6 +864,7 @@ public class GameController implements Initializable {
         continueButton.setOnAction(e -> resumeGame());
 
         mainMenuButton.setOnAction(e -> {
+            closeSolutionWindow();
             Stage primaryStage = (Stage) pausePopup.getOwner();
             SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
             pausePopup.close();
