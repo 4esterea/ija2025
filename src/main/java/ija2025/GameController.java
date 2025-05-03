@@ -15,6 +15,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.effect.Glow;
+import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -395,10 +396,12 @@ public class GameController implements Initializable {
             solutionStage.initOwner(solutionButton.getScene().getWindow());
             solutionStage.setResizable(false);
             solutionStage.setOnCloseRequest(event -> isSolutionShowing = false);
+            Image icon = new Image(getClass().getResourceAsStream("/ija2025/media/bulb_icon.png"));
+            solutionStage.getIcons().add(icon);
 
             Scene scene = new Scene(root);
             solutionStage.setScene(scene);
-            solutionStage.setTitle("Решение");
+            solutionStage.setTitle("Solution");
 
             int gridSize = gameManager.getGridSize();
             double cellSize = Math.min(350, 350) / gridSize;
