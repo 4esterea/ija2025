@@ -24,7 +24,7 @@ public class GameLogger {
         moveCounter = 0;
 
         // Create logs directory if it doesn't exist
-        File logDir = new File("src/logs");
+        File logDir = new File("logs");
         if (!logDir.exists()) {
             logDir.mkdirs();
         }
@@ -117,7 +117,7 @@ public class GameLogger {
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, gameLog);
         } catch (IOException e) {
-            System.err.println("Ошибка при сохранении лога игры: " + e.getMessage());
+            System.err.println("Error saving log file: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -138,12 +138,12 @@ public class GameLogger {
         if (logFile != null && logFile.exists()) {
             try {
                 if (logFile.delete()) {
-                    System.out.println("Лог игры удален: " + logFile.getPath());
+                    System.out.println("Log file deleted: " + logFile.getPath());
                 } else {
-                    System.err.println("Не удалось удалить лог игры: " + logFile.getPath());
+                    System.err.println("Error deleting log file: " + logFile.getPath());
                 }
             } catch (Exception e) {
-                System.err.println("Ошибка при удалении лога игры: " + e.getMessage());
+                System.err.println("Error deleting log file: " + e.getMessage());
                 e.printStackTrace();
             }
         }
