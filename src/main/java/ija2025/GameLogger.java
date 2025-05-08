@@ -149,4 +149,8 @@ public class GameLogger {
         }
     }
 
+    public int getTotalMoves() {
+        return moveCounter;
+    }
+
 }

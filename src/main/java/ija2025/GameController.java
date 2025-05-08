@@ -465,6 +465,10 @@ public class GameController implements Initializable {
         timeText.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 16px;");
         timeText.setFont(new Font("Papyrus", 16));
 
+        Text movecntText = new Text("Steps: " + gameManager.getGameLogger().getTotalMoves());
+        movecntText.setStyle("-fx-fill: rgb(205, 205, 205); -fx-font-size: 16px;");
+        movecntText.setFont(new Font("Papyrus", 16));
+
         Button mainMenuButton = createStyledButton("Main Menu");
         Button newGameButton = createStyledButton("New Game");
 
@@ -481,9 +485,9 @@ public class GameController implements Initializable {
             winPopup.close();
         });
 
-        winLayout.getChildren().addAll(winTitle, winMessage, timeText, newGameButton, mainMenuButton);
+        winLayout.getChildren().addAll(winTitle, winMessage, timeText, movecntText, newGameButton, mainMenuButton);
 
-        Scene winScene = new Scene(winLayout, 350, 300);
+        Scene winScene = new Scene(winLayout, 350, 350);
         winPopup.setScene(winScene);
 
         winPopup.setX(pauseButton.getScene().getWindow().getX() +
