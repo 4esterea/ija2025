@@ -1,3 +1,17 @@
+/*
+ * SolutionController.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Controller class for the solution view in the "lightbulb" project.
+ * Manages the visual representation of the game solution, including a color-coded
+ * grid that indicates how many rotations each node needs to reach its correct position.
+ * Provides intuitive visual feedback with different colors and symbols for proper
+ * game element alignment.
+ */
+
+
 package ija2025;
 
 import javafx.fxml.FXML;

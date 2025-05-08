@@ -1,9 +1,19 @@
+/*
+ * GameManager.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Core game logic class that manages the game board, game elements,
+ * power flow calculations, board generation, and handles interactions between game
+ * components for the "lightbulb" project.
+ */
+
+
 package ija2025;
 
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.Light;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 
 import java.util.*;
@@ -36,28 +46,24 @@ public class GameManager {
         this.random = new Random();
         this.gameLogger = new GameLogger();
 
-        // Установка размера сетки в зависимости от сложности
+        // Set grid size based on selected difficulty
         switch (difficulty) {
             case EASY:
-                gridSize = 5;
+                gridSize = 5;                // Smaller grid for easy difficulty
                 break;
             case MEDIUM:
-                gridSize = 7;
+                gridSize = 7;                // Medium-sized grid
                 break;
             case HARD:
-                gridSize = 10;
+                gridSize = 10;               // Larger grid for hard difficulty
                 break;
             default:
-                gridSize = 5;
+                gridSize = 5;                // Default to easy grid size
         }
 
-        // Инициализация сетки
         grid = new GameNode[gridSize][gridSize];
-
-        // Устанавливаем базовый размер ячейки (будет изменен при инициализации игры)
         cellSize = 50;
     }
-
     public double getCellSize() {
         return cellSize;
     }
@@ -98,13 +104,13 @@ public class GameManager {
     }
 
     public void generateGameBoard() {
-        disableLogging();
-        placePowerNode();
+        disableLogging();                // Temporarily disable move logging during generation
+        placePowerNode();                // Place power source on the board
 
         boolean hasEmptyCell = true;
 
         while (hasEmptyCell) {
-            // Проверяем, есть ли свободные клетки на поле
+            // Find an empty cell on the board
             hasEmptyCell = false;
             int emptyRow = -1;
             int emptyCol = -1;
@@ -121,7 +127,7 @@ public class GameManager {
                 if (hasEmptyCell) break;
             }
 
-            // Если нашли пустую клетку, размещаем лампочку
+            // Place a light bulb and connect it to the power source
             if (hasEmptyCell) {
                 LightBulbNode node = placeLightBulbNode();
                 connectToPower(node);
@@ -129,16 +135,16 @@ public class GameManager {
         }
         List<WireNode> wiresToReplace = checkDisconnectedWires();
         while (!wiresToReplace.isEmpty()) {
-            replaceDisconnectedWires(wiresToReplace);
-            wiresToReplace = checkDisconnectedWires();
+            replaceDisconnectedWires(wiresToReplace);     // Replace disconnected wires with light bulbs
+            wiresToReplace = checkDisconnectedWires();    // Recheck for any remaining disconnected wires
         }
-        checkAllLightBulbsConnected();
-        finalizePowerNodeConnections();
-        saveOriginalNodePositions();
-        shuffleAllNodes();
-        updatePowerFlow();
-        gameLogger.logInitialState(this);
-        enableLogging();
+        checkAllLightBulbsConnected();                    // Verify all bulbs are connected to power
+        finalizePowerNodeConnections();                   // Set active directions for power node
+        saveOriginalNodePositions();                      // Store the solution state
+        shuffleAllNodes();                                // Randomize node rotations
+        updatePowerFlow();                                // Update power state of all elements
+        gameLogger.logInitialState(this);                 // Log the initial game state
+        enableLogging();                                  // Enable move logging for player actions
     }
 
     private void shuffleAllNodes(){
@@ -172,48 +178,40 @@ public class GameManager {
         }
     }
 
-    public int getRotationsToOriginal(int row, int col) {
+    public int getRotationsToOriginal(int row, int col)
+    {
         String key = row + "," + col;
         GameNode node = grid[row][col];
 
         if (node == null || !originalRotations.containsKey(key)) {
-            return 0;
+            return 0;  // Return 0 if node doesn't exist or has no original position
         }
 
         int currentRotation = node.getRotation();
         int originalRotation = originalRotations.get(key);
 
         if (currentRotation == originalRotation) {
-            return 0;
+            return 0;  // Already in correct position
         }
 
-        // Вычисляем количество поворотов на 90 градусов (0-3)
-        int rotationsNeeded = (4 + (originalRotation - currentRotation) / 90) % 4;
-        // Проверяем, является ли узел проводом и применяем специальные правила
+        int rotationsNeeded = (4 + (originalRotation - currentRotation) / 90) % 4;  // Calculate standard rotations needed
+
         if (node instanceof WireNode) {
             WireNode wire = (WireNode) node;
             int connections = wire.getConnectedDirections().size();
 
-            // Для провода с 4 концами не нужно вращение
             if (connections == 4) {
-                return 0;
+                return 0;  // Cross-shaped wire doesn't need rotation
             }
 
-            // Для провода с 2 концами достаточно проверки на поворот на 180°
             if (connections == 2) {
-                // Получаем список направлений
                 Set<WireNode.Direction> directions = wire.getConnectedDirections();
 
-                // Проверяем, является ли провод прямым (I-образным)
                 boolean isIType = (directions.contains(WireNode.Direction.UP) && directions.contains(WireNode.Direction.DOWN)) ||
                         (directions.contains(WireNode.Direction.LEFT) && directions.contains(WireNode.Direction.RIGHT));
 
                 if (isIType) {
-                    // Для I-образного провода важно только 2 состояния (0° и 90°)
-                    return rotationsNeeded % 2;
-                } else {
-                    // Для L-образного провода важны все 4 состояния
-                    return rotationsNeeded;
+                    return rotationsNeeded % 2;  // Straight wire has only 2 distinct states
                 }
             }
         }
@@ -224,49 +222,49 @@ public class GameManager {
         int powerRow = _powerNode.getRow();
         int powerCol = _powerNode.getCol();
 
-        // Сохраняем активные направления источника питания
+        // Store active directions for power source
         Set<WireNode.Direction> activeDirections = new HashSet<>();
 
-        // Проверяем все четыре возможных направления
-        if (isValidConnection(powerRow - 1, powerCol)) { // Вверх
+        // Check all four possible directions
+        if (isValidConnection(powerRow - 1, powerCol)) { // Up
             activeDirections.add(WireNode.Direction.UP);
         }
-        if (isValidConnection(powerRow, powerCol + 1)) { // Вправо
+        if (isValidConnection(powerRow, powerCol + 1)) { // Right
             activeDirections.add(WireNode.Direction.RIGHT);
         }
-        if (isValidConnection(powerRow + 1, powerCol)) { // Вниз
+        if (isValidConnection(powerRow + 1, powerCol)) { // Down
             activeDirections.add(WireNode.Direction.DOWN);
         }
-        if (isValidConnection(powerRow, powerCol - 1)) { // Влево
+        if (isValidConnection(powerRow, powerCol - 1)) { // Left
             activeDirections.add(WireNode.Direction.LEFT);
         }
 
-        // Устанавливаем активные направления в источнике питания
+        // Set active directions in power source
         _powerNode.setActiveDirections(activeDirections);
 
-        System.out.println("Активные направления источника питания: " + activeDirections);
-        drawGrid(); // Перерисовываем сетку с обновленным источником
+        System.out.println("Active Powernode Directions: " + activeDirections);
+        drawGrid(); // Redraw grid with updated power source
     }
 
     private boolean isValidConnection(int row, int col) {
-        // Проверяем границы сетки
+        // Check grid boundaries
         if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
             return false;
         }
 
         GameNode node = grid[row][col];
 
-        // Если в клетке ничего нет - нет подключения
+        // No connection if cell is empty
         if (node == null) {
             return false;
         }
 
-        // Если это провод - проверяем, принимает ли он энергию с этой стороны
+        // For wire nodes - check if it accepts power from this direction
         if (node instanceof WireNode) {
             WireNode wire = (WireNode) node;
             WireNode.Direction directionFromPower;
 
-            // Определяем направление от источника к проводу
+            // Determine direction from power source to wire
             if (row < _powerNode.getRow()) {
                 directionFromPower = WireNode.Direction.UP;
             } else if (row > _powerNode.getRow()) {
@@ -277,16 +275,14 @@ public class GameManager {
                 directionFromPower = WireNode.Direction.RIGHT;
             }
 
-            // Проверяем, принимает ли провод энергию от источника
             return wire.isDirectionConnected(directionFromPower.getOpposite());
         }
 
-        // Если это лампочка - проверяем, смотрит ли она на источник
+        // For light bulbs - check if it's facing the power source
         if (node instanceof LightBulbNode) {
             LightBulbNode bulb = (LightBulbNode) node;
             WireNode.Direction bulbDirection = WireNode.Direction.fromDegrees(bulb.getRotation());
 
-            // Направление от источника к лампочке должно совпадать с направлением лампочки
             if (row < _powerNode.getRow() && bulbDirection == WireNode.Direction.UP) return true;
             if (row > _powerNode.getRow() && bulbDirection == WireNode.Direction.DOWN) return true;
             if (col < _powerNode.getCol() && bulbDirection == WireNode.Direction.LEFT) return true;
@@ -297,16 +293,15 @@ public class GameManager {
     }
 
     public boolean checkAllLightBulbsConnected() {
-        // Сначала распространяем энергию от источника питания
-        updatePowerFlow();
+        updatePowerFlow();                // Update power state from source first
 
         boolean allConnected = true;
         List<LightBulbNode> disconnectedBulbs = new ArrayList<>();
 
-        // Проверяем, все ли лампочки получают питание
+        // Check if all bulbs receive power
         for (LightBulbNode lightBulb : lightBulbNodes) {
             if (!lightBulb.isPowered()) {
-                System.out.println("Найдена неподключенная лампочка в [" +
+                System.out.println("Found disconnected bulb on [" +
                         lightBulb.getRow() + "," + lightBulb.getCol() + "]");
                 lightBulb.setDisconnected(true);
                 disconnectedBulbs.add(lightBulb);
@@ -316,30 +311,29 @@ public class GameManager {
             }
         }
 
-        // Пытаемся подключить неподключенные лампочки
+        // Try to connect disconnected bulbs
         if (!disconnectedBulbs.isEmpty()) {
-            System.out.println("Пытаемся подключить " + disconnectedBulbs.size() + " неподключенных лампочек");
+            System.out.println("Trying to connect " + disconnectedBulbs.size() + " bulbs");
 
-            // Сначала пробуем стандартное подключение
+            // Try standard connection first
             for (LightBulbNode lightBulb : new ArrayList<>(disconnectedBulbs)) {
                 connectToPower(lightBulb);
 
-                // Проверяем, удалось ли подключить
                 updatePowerFlow();
                 if (lightBulb.isPowered()) {
                     lightBulb.setDisconnected(false);
                     disconnectedBulbs.remove(lightBulb);
-                    System.out.println("Успешно подключена лампочка в [" +
+                    System.out.println("Successfully connected bulb on [" +
                             lightBulb.getRow() + "," + lightBulb.getCol() + "]");
                 }
             }
 
-            // Если остались неподключенные лампочки, пробуем заменить соседние лампочки на провода
+            // If any bulbs still disconnected, try replacing neighbors
             if (!disconnectedBulbs.isEmpty()) {
                 tryConnectWithNeighbors(disconnectedBulbs);
             }
 
-            // Перепроверяем, все ли лампочки теперь подключены
+            // Final check if all bulbs connected
             updatePowerFlow();
             allConnected = true;
             for (LightBulbNode lightBulb : lightBulbNodes) {
@@ -351,7 +345,7 @@ public class GameManager {
         }
 
         if (allConnected) {
-            System.out.println("Все лампочки подключены к источнику питания");
+            System.out.println("All bulbs are connected to power!");
         }
 
         return allConnected;
@@ -363,7 +357,7 @@ public class GameManager {
             int col = disconnectedBulb.getCol();
             boolean connected = false;
 
-            // Проверяем соседние ячейки
+            // Check adjacent cells
             for (WireNode.Direction dir : WireNode.Direction.values()) {
                 int neighborRow = row;
                 int neighborCol = col;
@@ -375,50 +369,50 @@ public class GameManager {
                     case LEFT: neighborCol--; break;
                 }
 
-                // Проверяем границы сетки
+                // Check grid boundaries
                 if (neighborRow < 0 || neighborRow >= gridSize || neighborCol < 0 || neighborCol >= gridSize) {
                     continue;
                 }
 
                 GameNode neighbor = grid[neighborRow][neighborCol];
 
-                // Если сосед - подключенная лампочка
+                // If neighbor is a connected light bulb
                 if (neighbor instanceof LightBulbNode && neighbor.isPowered()) {
                     System.out.println("Найдена подключенная лампочка-сосед в [" +
                             neighborRow + "," + neighborCol + "]");
 
-                    // Заменяем подключенную лампочку на провод
+                    // Replace connected bulb with a wire
                     LightBulbNode connectedBulb = (LightBulbNode) grid[neighborRow][neighborCol];
                     lightBulbNodes.remove(connectedBulb);
 
-                    // Определяем направление подключенной лампочки
+                    // Determine connected bulb direction
                     WireNode.Direction connectedBulbDir = WireNode.Direction.fromDegrees(connectedBulb.getRotation());
 
-                    // Создаем новый провод с соединениями
+                    // Create new wire with connections
                     WireNode wireNode = new WireNode(neighborRow, neighborCol);
                     wireNode.setGameManager(this);
 
-                    // Добавляем соединение в сторону неподключенной лампочки
+                    // Add connection toward disconnected bulb
                     wireNode.addConnection(dir.getOpposite());
 
-                    // Добавляем соединение в том же направлении, что и была подключенная лампочка
+                    // Add connection in same direction as connected bulb
                     wireNode.addConnection(connectedBulbDir);
 
-                    // Устанавливаем провод в сетке
+                    // Place wire in grid
                     grid[neighborRow][neighborCol] = wireNode;
 
-                    // Поворачиваем неподключенную лампочку к новому проводу
+                    // Rotate disconnected bulb toward new wire
                     while (WireNode.Direction.fromDegrees(disconnectedBulb.getRotation()) != dir) {
                         disconnectedBulb.rotate();
                     }
 
-                    // Обновляем поток энергии
+                    // Update power flow
                     updatePowerFlow();
 
-                    // Проверяем, подключилась ли лампочка
+                    // Check if bulb is now powered
                     if (disconnectedBulb.isPowered()) {
-                        System.out.println("Успешно подключили лампочку в [" + row + "," + col +
-                                "] заменой соседней лампочки на провод");
+                        System.out.println("Successfully replaced bulb on [" + row + "," + col +
+                                "] with wire and connected to power");
                         disconnectedBulb.setDisconnected(false);
                         connected = true;
                         break;
@@ -427,36 +421,36 @@ public class GameManager {
             }
 
             if (!connected) {
-                System.out.println("Не удалось подключить лампочку в [" + row + "," + col +
-                        "] через соседние лампочки");
+                System.out.println("Replacing of bulb on [" + row + "," + col +
+                        "] with wire failed");
             }
         }
     }
 
     private void connectToPower(LightBulbNode lightBulb) {
-        System.out.println("\n===== НАЧИНАЕМ ПОДКЛЮЧЕНИЕ ЛАМПОЧКИ К ИСТОЧНИКУ =====");
-        System.out.println("Лампочка: [" + lightBulb.getRow() + "," + lightBulb.getCol() +
-                "], поворот: " + lightBulb.getRotation());
-        System.out.println("Источник: [" + _powerNode.getRow() + "," + _powerNode.getCol() + "]");
+        System.out.println("\n===== STARTING LIGHT BULB CONNECTION TO POWER SOURCE =====");
+        System.out.println("Light bulb: [" + lightBulb.getRow() + "," + lightBulb.getCol() +
+                "], rotation: " + lightBulb.getRotation());
+        System.out.println("Power source: [" + _powerNode.getRow() + "," + _powerNode.getCol() + "]");
 
-        // Получаем направление выхода из лампочки
+        // Get the direction the light bulb is facing
         WireNode.Direction bulbDirection = WireNode.Direction.fromDegrees(lightBulb.getRotation());
-        System.out.println("Направление лампочки: " + bulbDirection);
+        System.out.println("Light bulb direction: " + bulbDirection);
 
-        // Проверяем все возможные ориентации лампочки, пытаясь найти направление, в котором можно подключить к источнику
+        // Try all possible light bulb orientations to find a direction to connect to power source
         int originalRotation = lightBulb.getRotation();
         boolean connectionSuccess = false;
 
-        // Пробуем все 4 возможные ориентации лампочки
+        // Try all 4 possible light bulb orientations
         for (int attempts = 0; attempts < 4; attempts++) {
-            // Получаем текущее направление лампочки
+            // Get current light bulb direction
             bulbDirection = WireNode.Direction.fromDegrees(lightBulb.getRotation());
 
-            // Рассчитываем координаты первой клетки для провода
+            // Calculate coordinates for first wire cell
             int nextRow = lightBulb.getRow();
             int nextCol = lightBulb.getCol();
 
-            // Смещаем координаты в направлении от лампочки
+            // Shift coordinates in the direction from light bulb
             switch (bulbDirection) {
                 case UP: nextRow--; break;
                 case RIGHT: nextCol++; break;
@@ -464,110 +458,109 @@ public class GameManager {
                 case LEFT: nextCol--; break;
             }
 
-            System.out.println("Пытаемся разместить первый провод в [" + nextRow + "," + nextCol + "]");
+            System.out.println("Trying to place first wire at [" + nextRow + "," + nextCol + "]");
 
-            // Проверка границ и занятости клеток
+            // Check grid boundaries and cell occupancy
             if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) {
-                System.out.println("Невозможно построить путь: за пределами сетки");
-                lightBulb.rotate(); // Поворачиваем и пробуем следующую ориентацию
+                System.out.println("Cannot build path: outside grid boundaries");
+                lightBulb.rotate(); // Rotate and try next orientation
                 continue;
             }
 
-            // Если клетка уже занята (не проводом), пробуем другую ориентацию
+            // If cell is already occupied (not by a wire), try another orientation
             if (grid[nextRow][nextCol] != null && !(grid[nextRow][nextCol] instanceof WireNode)) {
-                System.out.println("Невозможно построить путь: клетка занята " + grid[nextRow][nextCol].getClass().getSimpleName());
-                lightBulb.rotate(); // Поворачиваем и пробуем следующую ориентацию
+                System.out.println("Cannot build path: cell occupied by " + grid[nextRow][nextCol].getClass().getSimpleName());
+                lightBulb.rotate(); // Rotate and try next orientation
                 continue;
             }
 
-            // Рекурсивно строим путь от первой клетки
+            // Recursively build path from first cell
             boolean pathBuilt = buildPath(nextRow, nextCol, bulbDirection.getOpposite(),
                     _powerNode.getRow(), _powerNode.getCol(), new boolean[gridSize][gridSize]);
 
             if (pathBuilt) {
-                // Путь построен успешно
+                // Path successfully built
                 connectionSuccess = true;
-                System.out.println("Построен успешный путь от лампочки к источнику!");
+                System.out.println("Successfully built path from light bulb to power source!");
                 break;
             } else {
-                System.out.println("Не удалось построить путь в этом направлении. Пробуем другое.");
-                lightBulb.rotate(); // Поворачиваем и пробуем следующую ориентацию
+                System.out.println("Failed to build path in this direction. Trying another.");
+                lightBulb.rotate(); // Rotate and try next orientation
             }
         }
 
-        // Если после перебора всех ориентаций, подключение не удалось
+        // If connection failed after trying all orientations
         if (!connectionSuccess) {
-            System.out.println("Не удалось подключить лампочку к источнику ни в одном из направлений.");
-            // Восстанавливаем исходную ориентацию
+            System.out.println("Failed to connect light bulb to power source in any direction.");
+            // Restore original orientation
             while (lightBulb.getRotation() != originalRotation) {
                 lightBulb.rotate();
             }
         } else {
-            // Обновляем поток энергии
+            // Update power flow
             updatePowerFlow();
         }
 
-        System.out.println("===== ЗАВЕРШЕНО ПОДКЛЮЧЕНИЕ ЛАМПОЧКИ К ИСТОЧНИКУ =====\n");
+        System.out.println("===== COMPLETED LIGHT BULB CONNECTION TO POWER SOURCE =====\n");
     }
 
-    // Рекурсивное построение пути от текущей клетки к цели
     private boolean buildPath(int row, int col, WireNode.Direction fromDirection,
                             int targetRow, int targetCol, boolean[][] visited) {
 
-        System.out.println("Строим путь из [" + row + "," + col + "] с направления " +
-                          fromDirection + " к [" + targetRow + "," + targetCol + "]");
+        System.out.println("Building path from [" + row + "," + col + "] with direction " +
+                          fromDirection + " to [" + targetRow + "," + targetCol + "]");
 
-        // Проверка границ и посещённых клеток
+        // Check grid boundaries and visited cells
         if (row < 0 || row >= gridSize || col < 0 || col >= gridSize || visited[row][col]) {
-            System.out.println("  → За пределами сетки или клетка уже посещена");
+            System.out.println("  → Outside grid or cell already visited");
             return false;
         }
 
-        // Помечаем клетку как посещённую
+        // Mark cell as visited
         visited[row][col] = true;
 
-        // Проверка достижения цели (источника питания)
+        // Check if target reached (power source)
         if (row == targetRow && col == targetCol) {
-            System.out.println("  → Достигли источника питания!");
+            System.out.println("  → Reached power source!");
             return true;
         }
 
-        // Проверка клетки - пустая или провод
+        // Check cell - empty or wire
         WireNode wireNode;
         if (grid[row][col] == null) {
-            System.out.println("  → Создаём новый провод в [" + row + "," + col + "]");
+            System.out.println("  → Creating new wire at [" + row + "," + col + "]");
             wireNode = new WireNode(row, col);
             wireNode.setGameManager(this);
             grid[row][col] = wireNode;
         } else if (grid[row][col] instanceof WireNode) {
-            System.out.println("  → Используем существующий провод в [" + row + "," + col + "]");
+            System.out.println("  → Using existing wire at [" + row + "," + col + "]");
             wireNode = (WireNode) grid[row][col];
         } else {
-            System.out.println("  → Клетка занята другим объектом, не можем продолжить");
+            System.out.println("  → Cell occupied by another object, cannot continue");
             return false;
         }
 
-        // Добавляем соединение со стороны, откуда пришли
+        // Add connection from the direction we came from
         wireNode.addConnection(fromDirection);
-        System.out.println("  → Добавили соединение " + fromDirection);
+        System.out.println("  → Added connection " + fromDirection);
 
-        // Вычисляем дельты для определения направления
+        // Calculate deltas to determine direction
         int rowDelta = targetRow - row;
         int colDelta = targetCol - col;
 
-        // Список направлений для проверки в порядке приоритета
+        // List of directions to try in priority order
         List<WireNode.Direction> directionsToTry = new ArrayList<>();
 
-        // Приоритизируем направления в зависимости от относительного положения цели
+        // Prioritize directions based on relative target position
         if (Math.abs(rowDelta) > Math.abs(colDelta)) {
-            // Приоритет вертикального движения
+            // Vertical movement priority
             if (rowDelta < 0) directionsToTry.add(WireNode.Direction.UP);
             else if (rowDelta > 0) directionsToTry.add(WireNode.Direction.DOWN);
 
             if (colDelta < 0) directionsToTry.add(WireNode.Direction.LEFT);
             else if (colDelta > 0) directionsToTry.add(WireNode.Direction.RIGHT);
         } else {
-            // Приоритет горизонтального движения
+            // Horizontal movement priority
             if (colDelta < 0) directionsToTry.add(WireNode.Direction.LEFT);
             else if (colDelta > 0) directionsToTry.add(WireNode.Direction.RIGHT);
 
@@ -575,23 +568,23 @@ public class GameManager {
             else if (rowDelta > 0) directionsToTry.add(WireNode.Direction.DOWN);
         }
 
-        // Добавляем оставшиеся направления, если они ещё не в списке
+        // Add remaining directions if not already in the list
         for (WireNode.Direction dir : WireNode.Direction.values()) {
             if (!directionsToTry.contains(dir) && dir != fromDirection) {
                 directionsToTry.add(dir);
             }
         }
 
-        // Проходим по направлениям в порядке приоритета
+        // Try directions in priority order
         for (WireNode.Direction nextDirection : directionsToTry) {
-            // Пропускаем направление, откуда пришли
+            // Skip direction we came from
             if (nextDirection == fromDirection) {
                 continue;
             }
 
-            System.out.println("  → Пробуем направление: " + nextDirection);
+            System.out.println("  → Trying direction: " + nextDirection);
 
-            // Рассчитываем следующую позицию
+            // Calculate next position
             int nextRow = row;
             int nextCol = col;
             switch (nextDirection) {
@@ -601,21 +594,21 @@ public class GameManager {
                 case LEFT: nextCol--; break;
             }
 
-            // Рекурсивно строим путь от следующей клетки
+            // Recursively build path from next cell
             if (buildPath(nextRow, nextCol, nextDirection.getOpposite(), targetRow, targetCol, visited)) {
-                // Путь найден, добавляем соединение с этой стороны
+                // Path found, add connection on this side
                 wireNode.addConnection(nextDirection);
-                System.out.println("  → Успешно! Добавляем соединение " + nextDirection + " к [" + row + "," + col + "]");
+                System.out.println("  → Success! Adding connection " + nextDirection + " to [" + row + "," + col + "]");
                 return true;
             }
         }
 
-        // Если не удалось построить путь ни в одном направлении
-        System.out.println("  → Не удалось построить путь из [" + row + "," + col + "], возвращаемся");
+        // If no path could be built in any direction
+        System.out.println("  → Failed to build path from [" + row + "," + col + "], going back");
 
-        // Если это провод, который мы создали, но путь не нашли - удаляем провод
+        // If this is a wire we created but no path found - remove the wire
         if (grid[row][col] == wireNode && wireNode.getConnectedDirections().size() <= 1) {
-            System.out.println("  → Удаляем бесполезный провод из [" + row + "," + col + "]");
+            System.out.println("  → Removing useless wire from [" + row + "," + col + "]");
             grid[row][col] = null;
         }
 
@@ -638,72 +631,71 @@ public class GameManager {
     }
 
     private LightBulbNode placeLightBulbNode() {
-    int row = random.nextInt(gridSize);
-    int col = random.nextInt(gridSize);
+        int row = random.nextInt(gridSize);
+        int col = random.nextInt(gridSize);
 
-    // Ensure the position is empty
-    while (grid[row][col] != null) {
-        row = random.nextInt(gridSize);
-        col = random.nextInt(gridSize);
+        // Ensure the position is empty
+        while (grid[row][col] != null) {
+            row = random.nextInt(gridSize);
+            col = random.nextInt(gridSize);
+        }
+
+        LightBulbNode lightBulbNode = new LightBulbNode(row, col);
+        lightBulbNode.setGameManager(this);
+        grid[row][col] = lightBulbNode;
+        int rotations = random.nextInt(4); // 0-3 rotations (0, 90, 180, 270 degrees)
+        for(int i = 0; i < rotations; i++) lightBulbNode.rotate();
+
+        // Check if light bulb is facing the grid boundaries, rotate if true
+        while (isFacingBounds(lightBulbNode)) {
+            lightBulbNode.rotate();
+        }
+
+        lightBulbNodes.add(lightBulbNode);
+
+        return lightBulbNode;
     }
 
-    LightBulbNode lightBulbNode = new LightBulbNode(row, col);
-    lightBulbNode.setGameManager(this);
-    grid[row][col] = lightBulbNode;
-    int rotations = random.nextInt(4); // 0-3 ротаций (0, 90, 180, 270 градусов)
-    for(int i = 0; i < rotations; i++) lightBulbNode.rotate();
-
-    // Проверяем, смотрит ли лампочка за пределы поля, если да - поворачиваем
-    while (isFacingBounds(lightBulbNode)) {
-        lightBulbNode.rotate();
-    }
-
-    lightBulbNodes.add(lightBulbNode);
-
-    return lightBulbNode;
-}
-
-    // Проверяет, смотрит ли лампочка за пределы игрового поля
     private boolean isFacingBounds(LightBulbNode node) {
-    int rotation = node.getRotation();
-    int row = node.getRow();
-    int col = node.getCol();
+        int rotation = node.getRotation();
+        int row = node.getRow();
+        int col = node.getCol();
 
-    // Проверяем направление лампочки
-    switch (rotation) {
-        case 0: // Вверх
-            return row == 0;
-        case 90: // Вправо
-            return col == gridSize - 1;
-        case 180: // Вниз
-            return row == gridSize - 1;
-        case 270: // Влево
-            return col == 0;
-        default:
-            return false;
+        // Check light bulb direction
+        switch (rotation) {
+            case 0: // Up
+                return row == 0;
+            case 90: // Right
+                return col == gridSize - 1;
+            case 180: // Down
+                return row == gridSize - 1;
+            case 270: // Left
+                return col == 0;
+            default:
+                return false;
+        }
     }
-}
 
     public void initializeGame(Pane gamePane) {
-        // Рассчитываем оптимальный размер ячейки
+        // Calculate optimal cell size
         double windowSize = Math.min(gamePane.getPrefWidth(), gamePane.getPrefHeight());
         cellSize = windowSize / gridSize;
 
-        // Создаем canvas нужного размера
+        // Create canvas with required dimensions
         double canvasSize = gridSize * cellSize;
         gameCanvas = new Canvas(canvasSize, canvasSize);
         gc = gameCanvas.getGraphicsContext2D();
 
-        // Добавляем canvas на игровую панель
+        // Add canvas to game panel
         gamePane.getChildren().add(gameCanvas);
 
-        // Создаем игровую доску
+        // Create game board
         generateGameBoard();
 
-        // Отрисовываем начальное состояние
+        // Draw initial state
         drawGrid();
 
-        // Настраиваем обработчики кликов
+        // Set up click handlers
         setupClickHandlers(gamePane);
     }
 
@@ -715,7 +707,7 @@ public class GameManager {
         for (int row = 0; row < gridSize; row++) {
             for (int col = 0; col < gridSize; col++) {
                 if (grid[row][col] != null) {
-                    // Метод draw класса узла должен учитывать его состояние
+                    // The node's draw method should account for its state
                     grid[row][col].draw(gc);
                 }
             }
@@ -745,7 +737,6 @@ public class GameManager {
                     // Update power flow
                     updatePowerFlow();
 
-                    // Вызываем метод обновления окна с решением через контроллер
                     if (gameController != null) {
                         gameController.updateSolutionIfShowing();
                     }
@@ -754,11 +745,10 @@ public class GameManager {
         });
     }
 
-    // Метод проверки отсоединенных проводов, возвращает список таких проводов
     public List<WireNode> checkDisconnectedWires() {
         List<WireNode> disconnectedWires = new ArrayList<>();
 
-        // Сбрасываем состояние проводов
+        // Reset wire states
         for (int row = 0; row < gridSize; row++) {
             for (int col = 0; col < gridSize; col++) {
                 if (grid[row][col] instanceof WireNode) {
@@ -774,7 +764,7 @@ public class GameManager {
                     Set<WireNode.Direction> validConnections = new HashSet<>();
                     Set<WireNode.Direction> invalidConnections = new HashSet<>();
 
-                    // Проверяем каждое направление соединения
+                    // Check each connection direction
                     for (WireNode.Direction dir : wire.getConnectedDirections()) {
                         int nextRow = row;
                         int nextCol = col;
@@ -814,27 +804,27 @@ public class GameManager {
                         }
                     }
 
-                    // Если у провода есть хотя бы 2 валидных соединения, удаляем только невалидные
+                    // If wire has at least 2 valid connections, only remove the invalid ones
                     if (validConnections.size() >= 2) {
-                        // Удаляем невалидные соединения
+                        // Remove invalid connections
                         for (WireNode.Direction dir : invalidConnections) {
-                            System.out.println("Удаляем невалидное соединение " + dir +
-                                    " у провода в [" + row + "," + col + "]");
+                            System.out.println("Removing invalid connection " + dir +
+                                    " from wire at [" + row + "," + col + "]");
                             wire.removeConnection(dir);
                         }
                     }
-                    // Если меньше 2 валидных соединений, но есть хотя бы одно невалидное
+                    // If fewer than 2 valid connections but at least one invalid
                     else if (!invalidConnections.isEmpty()) {
                         wire.setDisconnectedEnd(true);
                         disconnectedWires.add(wire);
-                        System.out.println("Найден отсоединенный провод в [" + row + "," + col + "] - " +
-                                validConnections.size() + " валидных, " + invalidConnections.size() + " невалидных");
+                        System.out.println("Found disconnected wire at [" + row + "," + col + "] - " +
+                                validConnections.size() + " valid, " + invalidConnections.size() + " invalid");
                     }
                 }
             }
         }
 
-        System.out.println("Найдено отсоединенных проводов: " + disconnectedWires.size());
+        System.out.println("Found disconnected wires: " + disconnectedWires.size());
         return disconnectedWires;
     }
 
@@ -843,23 +833,22 @@ public class GameManager {
             int row = wire.getRow();
             int col = wire.getCol();
 
-            // Создаем новую лампочку
+            // Create a new light bulb
             LightBulbNode lightBulb = new LightBulbNode(row, col);
             lightBulb.setGameManager(this);
             grid[row][col] = lightBulb;
 
-            // Ориентируем лампочку и подключаем к источнику
+            // Orient the light bulb and connect to power source
             orientLightBulb(lightBulb, row, col);
             lightBulbNodes.add(lightBulb);
         }
 
-        // Перерисовываем сетку
+        // Redraw the grid
         drawGrid();
     }
 
-    // Вспомогательный метод для правильной ориентации лампочки
     private void orientLightBulb(LightBulbNode lightBulb, int row, int col) {
-        // Проверяем соседние клетки, чтобы найти подключенный провод или источник
+        // Check adjacent cells to find a connected wire or power source
         for (WireNode.Direction dir : WireNode.Direction.values()) {
             int nextRow = row;
             int nextCol = col;
@@ -871,19 +860,19 @@ public class GameManager {
                 case LEFT: nextCol--; break;
             }
 
-            // Проверяем границы
+            // Check boundaries
             if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) {
                 continue;
             }
 
             GameNode nextNode = grid[nextRow][nextCol];
             if (nextNode != null) {
-                // Если нашли провод, который подключен в нашу сторону, или источник питания
+                // If we found a wire that's connected in our direction, or a power source
                 if ((nextNode instanceof WireNode &&
                         ((WireNode)nextNode).isDirectionConnected(dir.getOpposite())) ||
                         nextNode instanceof PowerNode) {
 
-                    // Поворачиваем лампочку так, чтобы она "смотрела" в противоположном направлении
+                    // Rotate the light bulb to "face" the opposite direction
                     while (WireNode.Direction.fromDegrees(lightBulb.getRotation()) != dir) {
                         lightBulb.rotate();
                     }
@@ -892,24 +881,23 @@ public class GameManager {
             }
         }
 
-        // Если не нашли подходящее направление, устанавливаем случайную ориентацию
+        // If no suitable direction was found, set a random orientation
         int randomRotations = random.nextInt(4);
         for (int i = 0; i < randomRotations; i++) {
             lightBulb.rotate();
         }
 
-        // Проверяем, не смотрит ли лампочка за пределы поля
+        // Check if the light bulb is facing beyond the grid boundaries
         while (isFacingBounds(lightBulb)) {
             lightBulb.rotate();
         }
 
-        // подключаем лампочку к источнику
-
+        // Connect the light bulb to a power source
         connectToPower(lightBulb);
     }
 
     public boolean updatePowerFlow() {
-        // Сбрасываем питание для всех узлов кроме PowerNode
+        // Reset power for all nodes except PowerNode
         for (int row = 0; row < gridSize; row++) {
             for (int col = 0; col < gridSize; col++) {
                 if (grid[row][col] != null && !(grid[row][col] instanceof PowerNode)) {
@@ -918,31 +906,31 @@ public class GameManager {
             }
         }
 
-        // Получаем координаты источника питания
+        // Get power source coordinates
         int powerRow = _powerNode.getRow();
         int powerCol = _powerNode.getCol();
 
-        // Получаем активные направления источника питания
+        // Get active directions from the power source
         Set<WireNode.Direction> activeDirections = _powerNode.getActiveDirections();
 
-        // Распространяем энергию только в активных направлениях
+        // Propagate power only in active directions
         if (activeDirections.contains(WireNode.Direction.UP)) {
-            propagatePower(powerRow - 1, powerCol, 180); // вверх
+            propagatePower(powerRow - 1, powerCol, 180); // up
         }
 
         if (activeDirections.contains(WireNode.Direction.RIGHT)) {
-            propagatePower(powerRow, powerCol + 1, 270); // вправо
+            propagatePower(powerRow, powerCol + 1, 270); // right
         }
 
         if (activeDirections.contains(WireNode.Direction.DOWN)) {
-            propagatePower(powerRow + 1, powerCol, 0); // вниз
+            propagatePower(powerRow + 1, powerCol, 0); // down
         }
 
         if (activeDirections.contains(WireNode.Direction.LEFT)) {
-            propagatePower(powerRow, powerCol - 1, 90); // влево
+            propagatePower(powerRow, powerCol - 1, 90); // left
         }
 
-        // Считаем количество подключенных проводов
+        // Count connected wires
         int poweredWires = 0;
         int totalWires = 0;
 
@@ -957,15 +945,15 @@ public class GameManager {
             }
         }
 
-        // Перерисовываем сетку
+        // Redraw the grid
         drawGrid();
 
-        // Возвращаем true только если все провода подключены
+        // Return true only if all wires are connected
         return poweredWires == totalWires;
     }
 
     private void propagatePower(int row, int col, int fromDirection) {
-        // Проверка границ сетки
+        // Check grid boundaries
         if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
             return;
         }
@@ -975,52 +963,52 @@ public class GameManager {
             return;
         }
 
-        // Если узел уже под напряжением, нет необходимости распространять дальше
+        // If node is already powered, no need to propagate further
         if (node.isPowered()) {
             return;
         }
 
-        // Для лампочки - проверяем, что энергия приходит с правильной стороны
+        // For light bulb - check if power is coming from the correct side
         if (node instanceof LightBulbNode) {
             WireNode.Direction bulbDirection = WireNode.Direction.fromDegrees(node.getRotation());
             WireNode.Direction powerDirection = WireNode.Direction.fromDegrees(fromDirection);
 
-            // Лампочка получает питание только если она смотрит в направлении,
-            // откуда приходит энергия (т.е. на провод)
+            // Light bulb receives power only if it's facing the direction
+            // from which power is coming (i.e., toward the wire)
             if (bulbDirection != powerDirection) {
-                System.out.println("Лампочка в [" + row + "," + col + "] не запитана. " +
-                        "Её направление: " + bulbDirection + ", направление энергии: " + powerDirection);
-                return; // Лампочка смотрит не в ту сторону
+                System.out.println("Light bulb at [" + row + "," + col + "] not powered. " +
+                        "Its direction: " + bulbDirection + ", power direction: " + powerDirection);
+                return; // Light bulb is facing the wrong way
             }
-            System.out.println("Лампочка в [" + row + "," + col + "] запитана! " +
-                    "Её направление: " + bulbDirection + ", направление энергии: " + powerDirection);
+            System.out.println("Light bulb at [" + row + "," + col + "] powered! " +
+                    "Its direction: " + bulbDirection + ", power direction: " + powerDirection);
         }
 
-        // Для провода - проверяем, принимает ли он энергию с текущего направления
+        // For wire - check if it accepts power from the current direction
         if (node instanceof WireNode) {
             WireNode wireNode = (WireNode) node;
             WireNode.Direction fromDir = WireNode.Direction.fromDegrees(fromDirection);
 
             if (!wireNode.isDirectionConnected(fromDir)) {
-                return; // Провод не принимает энергию с этого направления
+                return; // Wire doesn't accept power from this direction
             }
         }
 
-        // Применяем питание к узлу
+        // Apply power to the node
         node.setPowered(true);
 
-        // Распространяем питание дальше только для проводов
+        // Propagate power further only for wires
         if (node instanceof WireNode) {
             WireNode wireNode = (WireNode) node;
 
-            // Распространяем энергию по всем подключенным направлениям
+            // Propagate energy across all connected directions
             for (WireNode.Direction dir : wireNode.getConnectedDirections()) {
-                // Не распространяем энергию обратно в направлении, откуда пришли
+                // Don't propagate energy back in the direction we came from
                 if (dir.getDegrees() == fromDirection) {
                     continue;
                 }
 
-                // Вычисляем новые координаты в зависимости от направления
+                // Calculate new coordinates based on direction
                 int newRow = row;
                 int newCol = col;
 
@@ -1039,21 +1027,21 @@ public class GameManager {
                         break;
                 }
 
-                // Распространяем энергию в новом направлении
+                // Propagate energy in the new direction
                 propagatePower(newRow, newCol, dir.getOpposite().getDegrees());
             }
         }
     }
 
     public boolean isGameWon() {
-        // Проверяем, что все лампочки подключены
+        // Check that all light bulbs are connected
         for (LightBulbNode bulb : lightBulbNodes) {
             if (!bulb.isPowered()) {
                 return false;
             }
         }
 
-        // Проверяем, что все провода подключены
+        // Check that all wires are connected
         for (int row = 0; row < gridSize; row++) {
             for (int col = 0; col < gridSize; col++) {
                 if (grid[row][col] instanceof WireNode && !grid[row][col].isPowered()) {

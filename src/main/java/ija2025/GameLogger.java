@@ -1,3 +1,15 @@
+/*
+ * GameLogger.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Logger class that tracks and records game state, player moves and
+ * game statistics in JSON format for the "lightbulb" project. Provides functionality
+ * for logging initial game state, player actions, and manages log file operations.
+ */
+
+
 package ija2025;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

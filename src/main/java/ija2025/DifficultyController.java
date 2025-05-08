@@ -1,31 +1,37 @@
+/*
+ * DifficultyController.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Controller class for the difficulty selection screen that manages
+ * UI elements, animations, and user interactions for different game difficulty levels
+ * in the "lightbulb" project.
+ */
+
+
 package ija2025;
 
-import javafx.animation.FadeTransition;
 import javafx.animation.FillTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.effect.Glow;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
-import javafx.stage.Stage;
 import javafx.util.Duration;
-
-import java.io.IOException;
 import java.net.URL;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
+// Controller for the difficulty selection screen
 public class DifficultyController implements Initializable {
+    // Text label for the difficulty menu
     @FXML
     private Text labelDifficultyMenu;
 
+    // Buttons for different difficulty levels
     @FXML
     private Button easyButton;
 
@@ -35,36 +41,44 @@ public class DifficultyController implements Initializable {
     @FXML
     private Button hardButton;
 
+    // Button to return to the previous screen
     @FXML
     private Button backButton;
 
+    // Initialize the controller after FXML has been loaded
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         setupButtonTransitions();
         setupButtonActions();
     }
 
+    // Configure action handlers for all buttons
     private void setupButtonActions() {
+        // Return to main menu when back button is clicked
         backButton.setOnAction(event -> {
-            SceneTransitionManager.switchScene(backButton, "main-view.fxml");
+            SceneTransitionManager.switchScene(backButton, "/main-view.fxml");
         });
 
+        // Handle easy difficulty selection
         easyButton.setOnAction(event -> {
             System.out.println("Easy difficulty selected");
             loadGameView("Easy");
         });
 
+        // Handle medium difficulty selection
         mediumButton.setOnAction(event -> {
             System.out.println("Medium difficulty selected");
             loadGameView("Medium");
         });
 
+        // Handle hard difficulty selection
         hardButton.setOnAction(event -> {
             System.out.println("Hard difficulty selected");
             loadGameView("Hard");
         });
     }
 
+    // Start the game with the selected difficulty level
     private void loadGameView(String difficulty) {
         System.out.println("Starting game with " + difficulty + " difficulty");
 
@@ -84,12 +98,14 @@ public class DifficultyController implements Initializable {
                 difficultyEnum = GameManager.Difficulty.EASY;
         }
 
-        // Store the selected difficulty in a static variable to be accessed by GameController
+        // Store the selected difficulty to be accessed by GameController
         GameController.setSelectedDifficulty(difficultyEnum);
 
-        SceneTransitionManager.switchScene(easyButton, "game-view.fxml");
+        // Switch to game screen
+        SceneTransitionManager.switchScene(easyButton, "/game-view.fxml");
     }
 
+    // Setup visual transitions for all UI elements
     private void setupButtonTransitions() {
         setupButtonTransition(easyButton);
         setupButtonTransition(mediumButton);
@@ -98,8 +114,10 @@ public class DifficultyController implements Initializable {
         setupTextTransition(labelDifficultyMenu);
     }
 
+    // Configure visual effects and animations for a button
     private void setupButtonTransition(Button button) {
         if (button != null) {
+            // Define colors for different button states
             Color defaultBgColor = Color.rgb(43, 45, 48);
             Color hoverBgColor = Color.rgb(30, 31, 34);
             Color defaultTextColor = Color.rgb(205, 205, 205);
@@ -108,6 +126,7 @@ public class DifficultyController implements Initializable {
             Color pressedTextColor = Color.rgb(230, 230, 230);
             Color pressedBorderColor = Color.rgb(100, 103, 105);
 
+            // Set default button style
             button.setStyle("-fx-background-color: rgb(43, 45, 48); " +
                            "-fx-text-fill: rgb(205, 205, 205); " +
                            "-fx-border-color: rgb(30, 31, 34); " +
@@ -115,6 +134,7 @@ public class DifficultyController implements Initializable {
                            "-fx-border-radius: 5px; " +
                            "-fx-background-radius: 5px;");
 
+            // Mouse enter effect - enlarge and brighten
             button.setOnMouseEntered(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), button);
                 scaleTransition.setToX(1.05);
@@ -131,6 +151,7 @@ public class DifficultyController implements Initializable {
                 scaleTransition.play();
             });
 
+            // Mouse press effect - shrink and darken
             button.setOnMousePressed(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
                 scaleTransition.setToX(0.95);
@@ -147,6 +168,7 @@ public class DifficultyController implements Initializable {
                 scaleTransition.play();
             });
 
+            // Mouse release effect - return to hover or default state
             button.setOnMouseReleased(e -> {
                 if (button.isHover()) {
                     ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
@@ -179,6 +201,7 @@ public class DifficultyController implements Initializable {
                 }
             });
 
+            // Mouse exit effect - return to normal size and color
             button.setOnMouseExited(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(300), button);
                 scaleTransition.setToX(1.0);
@@ -197,12 +220,15 @@ public class DifficultyController implements Initializable {
         }
     }
 
+    // Configure visual effects and animations for text elements
     private void setupTextTransition(Text text) {
         if (text != null) {
+            // Define colors for different text states
             Color defaultTextColor = Color.rgb(205, 205, 205);
             Color hoverTextColor = Color.WHITE;
             Color pressedTextColor = Color.rgb(240, 240, 240);
 
+            // Mouse enter effect - brighten and add glow
             text.setOnMouseEntered(e -> {
                 FillTransition fillTransition = new FillTransition(Duration.millis(300), text);
                 fillTransition.setToValue(hoverTextColor);
@@ -215,6 +241,7 @@ public class DifficultyController implements Initializable {
                 fillTransition.play();
             });
 
+            // Mouse exit effect - return to default color and remove glow
             text.setOnMouseExited(e -> {
                 FillTransition fillTransition = new FillTransition(Duration.millis(300), text);
                 fillTransition.setToValue(defaultTextColor);
@@ -225,6 +252,7 @@ public class DifficultyController implements Initializable {
                 fillTransition.play();
             });
 
+            // Mouse press effect - change color and increase glow
             text.setOnMousePressed(e -> {
                 FillTransition fillTransition = new FillTransition(Duration.millis(150), text);
                 fillTransition.setToValue(pressedTextColor);
@@ -237,6 +265,7 @@ public class DifficultyController implements Initializable {
                 fillTransition.play();
             });
 
+            // Mouse release effect - return to hover or default state
             text.setOnMouseReleased(e -> {
                 FillTransition fillTransition = new FillTransition(Duration.millis(150), text);
 

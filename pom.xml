@@ -74,7 +74,6 @@
         <version>0.0.8</version>
         <executions>
           <execution>
-            <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
               <mainClass>ija2025.Launcher</mainClass>
@@ -116,5 +115,12 @@
             </executions>
         </plugin>
     </plugins>
+
+      <resources>
+          <resource>
+              <directory>lib/resources</directory>
+          </resource>
+      </resources>
+
   </build>
 </project>

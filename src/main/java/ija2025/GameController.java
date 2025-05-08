@@ -1,3 +1,15 @@
+/*
+ * GameController.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Controller class for the game screen that manages the game logic,
+ * UI interactions, game state, timer functionality, and provides features like
+ * pause menu, solution view, and move history navigation for the "lightbulb" project.
+ */
+
+
 package ija2025;
 
 import javafx.animation.Animation;
@@ -22,7 +34,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
-import javafx.scene.canvas.Canvas;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -30,7 +41,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
-
 import java.net.URL;
 import java.util.ResourceBundle;
 
@@ -374,7 +384,7 @@ public class GameController implements Initializable {
         }
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("solution-view.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/solution-view.fxml"));
             Parent root = loader.load();
 
             SolutionController controller = loader.getController();
@@ -387,7 +397,7 @@ public class GameController implements Initializable {
             solutionStage.initOwner(solutionButton.getScene().getWindow());
             solutionStage.setResizable(false);
             solutionStage.setOnCloseRequest(event -> isSolutionShowing = false);
-            Image icon = new Image(getClass().getResourceAsStream("/ija2025/media/bulb_icon.png"));
+            Image icon = new Image(getClass().getResourceAsStream("/media/bulb_icon.png"));
             solutionStage.getIcons().add(icon);
 
             Scene scene = new Scene(root);
@@ -475,13 +485,13 @@ public class GameController implements Initializable {
         mainMenuButton.setOnAction(e -> {
             closeSolutionWindow();
             Stage primaryStage = (Stage) winPopup.getOwner();
-            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "/main-view.fxml");
             winPopup.close();
         });
 
         newGameButton.setOnAction(e -> {
             Stage primaryStage = (Stage) winPopup.getOwner();
-            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "difficulty-view.fxml");
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "/difficulty-view.fxml");
             winPopup.close();
         });
 
@@ -551,14 +561,14 @@ public class GameController implements Initializable {
         mainMenuButton.setOnAction(e -> {
             closeSolutionWindow();
             Stage primaryStage = (Stage) pausePopup.getOwner();
-            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "main-view.fxml");
+            SceneTransitionManager.switchScene(primaryStage.getScene().getRoot(), "/main-view.fxml");
             pausePopup.close();
         });
 
         pauseLayout.getChildren().addAll(pauseTitle, continueButton, mainMenuButton);
 
         Scene pauseScene = new Scene(pauseLayout, 300, 250);
-        pauseScene.getStylesheets().add(getClass().getResource("styles/styles.css").toExternalForm());
+        pauseScene.getStylesheets().add(getClass().getResource("/styles/styles.css").toExternalForm());
         pausePopup.setScene(pauseScene);
 
         pausePopup.setX(pauseButton.getScene().getWindow().getX() +
