@@ -1,8 +1,6 @@
 package ija2025;
 
 import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
-import javafx.animation.FillTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.ScaleTransition;
@@ -14,12 +12,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
@@ -27,8 +23,6 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.paint.Color;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -37,9 +31,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
-import java.io.IOException;
 import java.net.URL;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
 public class GameController implements Initializable {
@@ -70,7 +62,6 @@ public class GameController implements Initializable {
     private Stage pausePopup;
     private boolean isPaused = false;
     private Stage solutionStage;
-    private Canvas solutionCanvas;
     private boolean isSolutionShowing = false;
     private List<ObjectNode> movesList = new ArrayList<>();
     private int currentMoveIndex = -1;
@@ -119,12 +110,12 @@ public class GameController implements Initializable {
     }
 
     private void setupWindowCloseHandler() {
-        // Добавляем слушателя для сцены, чтобы получить доступ к Stage
+        // Add a listener for the scene to get access to the Stage
         gameWindow.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (newScene != null) {
                 Stage stage = (Stage) newScene.getWindow();
                 stage.setOnCloseRequest(event -> {
-                    // Удаляем лог при закрытии окна
+                    // Delete the log when closing the window
                     if (gameManager != null && gameManager.getGameLogger() != null) {
                         gameManager.getGameLogger().deleteLogFile();
                     }
@@ -134,10 +125,10 @@ public class GameController implements Initializable {
     }
 
     private void setupButtonTransitions() {
-        // Список всех кнопок с иконками
+        // List of all buttons with icons
         Button[] buttons = {pauseButton, stepBackButton, stepForwardButton, solutionButton};
 
-        // Определение цветов для разных состояний
+        // Define colors for different states
         String defaultStyle = "-fx-background-color: rgb(43, 45, 48); " +
                 "-fx-text-fill: rgb(205, 205, 205); " +
                 "-fx-border-color: rgb(30, 31, 34); " +
@@ -162,10 +153,10 @@ public class GameController implements Initializable {
         for (Button button : buttons) {
             if (button == null) continue;
 
-            // Устанавливаем начальный стиль
+            // Set initial style
             button.setStyle(defaultStyle);
 
-            // При наведении мыши
+            // On mouse hover
             button.setOnMouseEntered(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
                 scaleTransition.setToX(1.05);
@@ -175,7 +166,7 @@ public class GameController implements Initializable {
                 scaleTransition.play();
             });
 
-            // При нажатии
+            // On press
             button.setOnMousePressed(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(100), button);
                 scaleTransition.setToX(0.95);
@@ -185,7 +176,7 @@ public class GameController implements Initializable {
                 scaleTransition.play();
             });
 
-            // При отпускании
+            // On release
             button.setOnMouseReleased(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(100), button);
                 scaleTransition.setToX(button.isHover() ? 1.05 : 1.0);
@@ -195,7 +186,7 @@ public class GameController implements Initializable {
                 scaleTransition.play();
             });
 
-            // При уходе мыши
+            // On mouse exit
             button.setOnMouseExited(e -> {
                 ScaleTransition scaleTransition = new ScaleTransition(Duration.millis(150), button);
                 scaleTransition.setToX(1.0);
@@ -210,7 +201,7 @@ public class GameController implements Initializable {
 
     private void closeSolutionWindow() {
         if (solutionStage != null) {
-            System.out.println("Закрытие окна с решением");
+            System.out.println("Closing solution window");
             solutionStage.close();
             solutionStage = null;
             isSolutionShowing = false;
@@ -231,12 +222,12 @@ public class GameController implements Initializable {
                         for (JsonNode moveNode : movesNode) {
                             movesList.add((ObjectNode) moveNode);
                         }
-                        // Устанавливаем индекс в положение ПЕРЕД первым ходом
+
                         currentMoveIndex = movesList.size() - 1;
-                        System.out.println("Загружено ходов: " + movesList.size());
+                        System.out.println("Moves loaded: " + movesList.size());
                     }
                 } catch (IOException e) {
-                    System.err.println("Ошибка при загрузке истории ходов: " + e.getMessage());
+                    System.err.println("Error loading move history: " + e.getMessage());
                 }
             }
         }
@@ -256,19 +247,19 @@ public class GameController implements Initializable {
                         for (JsonNode moveNode : movesNode) {
                             movesList.add((ObjectNode) moveNode);
                         }
-                        // Устанавливаем текущий индекс в конец истории
+                        // Set the current index to the end of history
                         currentMoveIndex = movesList.size() - 1;
-                        System.out.println("Загружена история: " + movesList.size() + " ходов");
+                        System.out.println("History loaded: " + movesList.size() + " moves");
                     }
                 } catch (IOException e) {
-                    System.err.println("Ошибка при загрузке истории ходов: " + e.getMessage());
+                    System.err.println("Error loading move history: " + e.getMessage());
                     e.printStackTrace();
                 }
             } else {
-                System.err.println("Файл журнала не найден или недоступен");
+                System.err.println("Log file not found");
             }
         } else {
-            System.err.println("GameManager или GameLogger не инициализированы");
+            System.err.println("GameManager or GameLogger is null");
         }
     }
 
@@ -276,44 +267,44 @@ public class GameController implements Initializable {
         System.out.println("Step Back");
 
         if (movesList.isEmpty()) {
-            System.out.println("История ходов пуста");
+            System.out.println("Move history is empty");
             return;
         }
 
         if (currentMoveIndex >= 0) {
-            // Находим текущий ход
+            // Find the current move
             ObjectNode currentMove = movesList.get(currentMoveIndex);
 
-            // Получаем данные хода
+            // Get move data
             int row = currentMove.get("row").asInt();
             int col = currentMove.get("col").asInt();
             int prevRotation = currentMove.get("prevRotation").asInt();
 
-            // Получаем узел из сетки
+            // Get the node from the grid
             GameNode node = gameManager.getGrid()[row][col];
 
-            // Временно отключаем логирование
+            // Temporarily disable logging
             boolean wasLoggingEnabled = gameManager.isLoggingEnabled();
             gameManager.setLoggingEnabled(false);
 
-            // Устанавливаем предыдущее вращение
+            // Set the previous rotation
             while (node.getRotation() != prevRotation) {
                 node.rotate();
             }
 
-            // Восстанавливаем исходное состояние логирования
+            // Restore original logging state
             gameManager.setLoggingEnabled(wasLoggingEnabled);
 
-            // Уменьшаем индекс после применения хода
+            // Decrease index after applying the move
             currentMoveIndex--;
-            System.out.println("Возврат к ходу " + (currentMoveIndex + 1) + " из " + movesList.size());
+            System.out.println("Turning to move " + (currentMoveIndex + 1) + " of " + movesList.size());
 
-            // Обновляем сетку и поток энергии
+            // Update grid and power flow
             gameManager.redrawGrid();
             gameManager.updatePowerFlow();
             updateSolutionIfShowing();
         } else {
-            System.out.println("Нет предыдущих ходов");
+            System.out.println("No more moves to step back");
         }
     }
 
@@ -321,46 +312,46 @@ public class GameController implements Initializable {
         System.out.println("Step Forward");
 
         if (movesList.isEmpty()) {
-            System.out.println("История ходов пуста");
+            System.out.println("Move history is empty");
             return;
         }
 
         if (currentMoveIndex < movesList.size() - 1) {
-            // Увеличиваем индекс на 1, чтобы перейти к следующему ходу
+
             currentMoveIndex++;
 
-            // Выводим информацию для отладки
-            System.out.println("Переход к ходу " + (currentMoveIndex + 1) + " из " + movesList.size());
+            // Output debug information
+            System.out.println("Turning to move " + (currentMoveIndex + 1) + " of " + movesList.size());
 
-            // Находим следующий ход
+            // Find the next move
             ObjectNode nextMove = movesList.get(currentMoveIndex);
 
-            // Получаем данные хода
+            // Get move data
             int row = nextMove.get("row").asInt();
             int col = nextMove.get("col").asInt();
             int newRotation = nextMove.get("newRotation").asInt();
 
-            // Получаем узел из сетки
+            // Get the node from the grid
             GameNode node = gameManager.getGrid()[row][col];
 
-            // Временно отключаем логирование
+            // Temporarily disable logging
             boolean wasLoggingEnabled = gameManager.isLoggingEnabled();
             gameManager.setLoggingEnabled(false);
 
-            // Устанавливаем новое вращение
+            // Set the new rotation
             while (node.getRotation() != newRotation) {
                 node.rotate();
             }
 
-            // Восстанавливаем исходное состояние логирования
+            // Restore original logging state
             gameManager.setLoggingEnabled(wasLoggingEnabled);
 
-            // Обновляем сетку и поток энергии
+            // Update grid and power flow
             gameManager.redrawGrid();
             gameManager.updatePowerFlow();
             updateSolutionIfShowing();
         } else {
-            System.out.println("Нет следующих ходов");
+            System.out.println("No more moves to step forward");
         }
     }
 
@@ -418,7 +409,7 @@ public class GameController implements Initializable {
             isSolutionShowing = true;
 
         } catch (IOException e) {
-            System.err.println("Ошибка при загрузке FXML: " + e.getMessage());
+            System.err.println("Error loading FXML: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -435,7 +426,7 @@ public class GameController implements Initializable {
         // Initialize the game
         gameManager.initializeGame(gameField);
 
-        // Загружаем историю ходов
+        // Load move history
         loadMoveHistory();
 
         // Check for win condition after each move

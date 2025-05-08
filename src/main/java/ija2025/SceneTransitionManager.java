@@ -1,5 +1,3 @@
-// Язык: java
-
 package ija2025;
 
 import javafx.animation.FadeTransition;

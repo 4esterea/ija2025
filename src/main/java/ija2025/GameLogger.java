@@ -10,10 +10,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class GameLogger {
-    private ObjectMapper mapper;
-    private ObjectNode gameLog;
-    private ArrayNode movesLog;
-    private File logFile;
+    private final ObjectMapper mapper;
+    private final ObjectNode gameLog;
+    private final ArrayNode movesLog;
+    private final File logFile;
     private int moveCounter;
     private boolean isLoggingEnabled = true;
 
@@ -23,13 +23,13 @@ public class GameLogger {
         movesLog = mapper.createArrayNode();
         moveCounter = 0;
 
-        // Создаем директорию для логов, если она не существует
+        // Create logs directory if it doesn't exist
         File logDir = new File("src/logs");
         if (!logDir.exists()) {
             logDir.mkdirs();
         }
 
-        // Создаем уникальное имя файла с временной меткой
+        // Create a unique file name with timestamp
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         String timestamp = dateFormat.format(new Date());
         logFile = new File(logDir, "game_log_" + timestamp + ".json");
@@ -40,14 +40,14 @@ public class GameLogger {
     public void setLoggingEnabled(boolean enabled) {
         this.isLoggingEnabled = enabled;
     }
-    // Метод для логирования начального состояния игры
+    // Method for logging the initial game state
     public void logInitialState(GameManager gameManager) {
         ObjectNode initialState = mapper.createObjectNode();
         initialState.put("timestamp", new Date().toString());
         initialState.put("difficulty", gameManager.getDifficulty().toString());
         initialState.put("gridSize", gameManager.getGridSize());
 
-        // Массив для состояния всех клеток
+        // Array for all cell states
         ArrayNode gridState = mapper.createArrayNode();
 
         GameNode[][] grid = gameManager.getGrid();
@@ -62,9 +62,8 @@ public class GameLogger {
                     nodeState.put("rotation", node.getRotation());
                     nodeState.put("powered", node.isPowered());
 
-                    // Добавляем специфичную информацию для разных типов узлов
-                    if (node instanceof WireNode) {
-                        WireNode wireNode = (WireNode) node;
+                    // Add specific information for different node types
+                    if (node instanceof WireNode wireNode) {
                         ArrayNode connections = mapper.createArrayNode();
                         for (WireNode.Direction dir : wireNode.getConnectedDirections()) {
                             connections.add(dir.toString());
@@ -81,11 +80,11 @@ public class GameLogger {
         gameLog.set("initialState", initialState);
         gameLog.set("moves", movesLog);
 
-        // Сохраняем начальное состояние в файл
+        // Save the initial state to file
         saveLogToFile();
     }
 
-    // Метод для логирования хода игрока
+    // Method for logging player's move
     public void logMove(GameNode node, int prevRotation) {
         if (!isLoggingEnabled) return;
         moveCounter++;
@@ -100,9 +99,8 @@ public class GameLogger {
         move.put("newRotation", node.getRotation());
         move.put("powered", node.isPowered());
 
-        // Добавляем информацию о соединениях для проводов
-        if (node instanceof WireNode) {
-            WireNode wireNode = (WireNode) node;
+        // Add information about wire connections
+        if (node instanceof WireNode wireNode) {
             ArrayNode connections = mapper.createArrayNode();
             for (WireNode.Direction dir : wireNode.getConnectedDirections()) {
                 connections.add(dir.toString());
@@ -114,7 +112,7 @@ public class GameLogger {
         saveLogToFile();
     }
 
-    // Сохранение лога в файл
+    // Save log to file
     private void saveLogToFile() {
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(logFile, gameLog);
@@ -124,7 +122,7 @@ public class GameLogger {
         }
     }
 
-    // Определение типа узла
+    // Determine node type
     private String getNodeType(GameNode node) {
         if (node instanceof PowerNode) {
             return "PowerNode";
@@ -135,6 +133,7 @@ public class GameLogger {
         }
         return "UnknownNode";
     }
+
     public void deleteLogFile() {
         if (logFile != null && logFile.exists()) {
             try {

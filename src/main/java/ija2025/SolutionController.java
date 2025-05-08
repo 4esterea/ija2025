@@ -92,8 +92,8 @@ public class SolutionController {
                     gc.setFill(baseColor);
                     gc.fillRect(x, y, effectiveCellSize, effectiveCellSize);
 
-                    gc.setStroke(Color.rgb(30, 30, 30, 0.7)); // Тёмный цвет с небольшой прозрачностью
-                    gc.setLineWidth(1.0); // Толщина линии
+                    gc.setStroke(Color.rgb(30, 30, 30, 0.7));
+                    gc.setLineWidth(1.0);
                     gc.strokeRect(x, y, effectiveCellSize, effectiveCellSize);
 
                     RadialGradient vignette = new RadialGradient(
@@ -104,8 +104,8 @@ public class SolutionController {
                             0.7,
                             true,
                             CycleMethod.NO_CYCLE,
-                            new Stop(0, Color.TRANSPARENT),       // градиент от прозрачного в центре
-                            new Stop(1, Color.rgb(0, 0, 0, 0.5))  // к полупрозрачному черному по краям
+                            new Stop(0, Color.TRANSPARENT),
+                            new Stop(1, Color.rgb(0, 0, 0, 0.5))
                     );
 
                     gc.save();
