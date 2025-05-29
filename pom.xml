@@ -24,6 +24,11 @@
       <artifactId>javafx-fxml</artifactId>
       <version>23</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.10.1</version>
+    </dependency>
 <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-media</artifactId>
@@ -69,10 +74,9 @@
         <version>0.0.8</version>
         <executions>
           <execution>
-            <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>com.example.ija2025/ija2025.Main</mainClass>
+              <mainClass>ija2025.Launcher</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
@@ -83,6 +87,40 @@
           </execution>
         </executions>
       </plugin>
+	  <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <version>3.3.0</version>
+            <configuration>
+                <archive>
+                    <manifest>
+                        <mainClass>ija2025.Launcher</mainClass>
+                        <addClasspath>true</addClasspath>
+                    </manifest>
+                </archive>
+            </configuration>
+        </plugin>
+        
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>3.5.1</version>
+            <executions>
+                <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
+
+      <resources>
+          <resource>
+              <directory>lib/resources</directory>
+          </resource>
+      </resources>
+
   </build>
 </project>

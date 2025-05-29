@@ -1,4 +1,15 @@
-// Язык: java
+/*
+ * SceneTransitionManager.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Utility class that handles scene transitions in the JavaFX application
+ * with smooth fade effects. Provides a clean API for switching between different
+ * FXML-based views while maintaining consistent visual styling and transition animations
+ * throughout the "lightbulb" project.
+ */
+
 
 package ija2025;
 

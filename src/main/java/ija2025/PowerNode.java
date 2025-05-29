@@ -1,3 +1,16 @@
+/*
+ * PowerNode.java
+ *
+ * Authors: Zhdanovich Iaroslav (xzhdan00)
+ *          Malytskyi Denys     (xmalytd00)
+ *
+ * Description: Game node class that represents power source elements in the game grid.
+ * Extends GameNode with functionality for managing active connection directions,
+ * visual representation of a power node with active wire connections, and
+ * custom rotation behavior. Includes lightning imagery and power-state visual effects.
+ */
+
+
 package ija2025;
 
 import javafx.scene.canvas.GraphicsContext;
@@ -36,10 +49,8 @@ public class PowerNode extends GameNode {
     private void loadLightningImage() {
         if (lightningImage == null) {
             try {
-                lightningImage = new Image(Objects.requireNonNull(getClass().getResourceAsStream("media/lightning.png")));
-            } catch (Exception e) {
-                System.err.println("Не удалось загрузить изображение молнии: " + e.getMessage());
-            }
+                lightningImage = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/media/lightning.png")));
+            } catch (Exception e) {}
         }
     }
 
